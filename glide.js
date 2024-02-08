@@ -22,7 +22,7 @@ AFRAME.registerComponent('log-position', {
     this.oldRight = this.rightHand.clone();
     this.dir = new THREE.Vector3(0, 0, 0);
 
-    // this.VAXIS = new THREE.Vector3(0, 1, 0);
+    this.VAXIS = new THREE.Vector3(0, 1, 0);
   },
   
   tick: function () {
@@ -53,19 +53,15 @@ AFRAME.registerComponent('log-position', {
       }
       
       // go up when moving down the controller
+      let armWidth = this.leftHand.distanceTo(this.rightHand);
       let isControllerMovingDown = inverseControllerDir.y > 0;
       if (isControllerMovingDown) {
         // move up when controller is moving down, move faster with wider arm span
-        let armWidth = this.leftHand.distanceTo(this.rightHand);
-        dir.y += inverseControllerDir.y * armWidth;
+        dir.y = inverseControllerDir.y * (armWidth + 0.3);
 
         let factor = 3;
         dir.x = inverseControllerDir.x * factor;
         dir.z = inverseControllerDir.z * factor;
-        
-        // add 10% of the controller direction to the gliding direction
-        this.dir.x += dir.x * 0.1;
-        this.dir.z += dir.z * 0.1;
       }
       
       // add floating
@@ -76,13 +72,29 @@ AFRAME.registerComponent('log-position', {
           this.dir.x *= slow_down_factor;
           this.dir.z *= slow_down_factor;
         }
+
+        // rotate if hands are at different heights
+        let armHeightDiff = this.leftHand.y - this.rightHand.y;
+        let areHandsDifferentHeight = Math.abs(armHeightDiff) > 0.2;
+        if (areHandsDifferentHeight) {
+          let angle = Math.tan(armHeightDiff / armWidth);
+          this.rigRot.y -= angle / 100;
+        }      
       } else {
         // stop gliding when we're on the ground
         this.dir = new THREE.Vector3(0, 0, 0);
       }
 
+      // rotate the direction vector with the rig rotation
+      dir.applyAxisAngle(this.VAXIS, this.rigRot.y);
+
+      // move the rig according to controller movement and gliding direction
+      this.rig.addScaledVector(dir, 2);
       this.rig.add(this.dir);
-      this.rig.add(dir);
+
+      // add 10% of the controller direction to the gliding direction
+      this.dir.x += dir.x * 0.1;
+      this.dir.z += dir.z * 0.1;
       
       // remember controller position
       if (isLeftController) {
