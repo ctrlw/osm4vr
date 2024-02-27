@@ -21,6 +21,8 @@ AFRAME.registerComponent('log-position', {
     this.oldLeft = this.leftHand.clone();
     this.oldRight = this.rightHand.clone();
     this.dir = new THREE.Vector3(0, 0, 0);
+    this.leftDir = new THREE.Vector3(0, 0, 0);
+    this.rightDir = new THREE.Vector3(0, 0, 0);
 
     this.VAXIS = new THREE.Vector3(0, 1, 0);
   },
@@ -42,8 +44,10 @@ AFRAME.registerComponent('log-position', {
       let inverseControllerDir = new THREE.Vector3(0, 0, 0);
       if (isLeftController) {
         inverseControllerDir = this.oldLeft.sub(this.leftHand);
+        this.leftDir.divideScalar(2).add(inverseControllerDir);
       } else {
         inverseControllerDir = this.oldRight.sub(this.rightHand);
+        this.rightDir.divideScalar(2).add(inverseControllerDir);
       }
 
       // glide down while above start height
@@ -54,8 +58,8 @@ AFRAME.registerComponent('log-position', {
       
       // go up when moving down the controller
       let armWidth = this.leftHand.distanceTo(this.rightHand);
-      let isControllerMovingDown = inverseControllerDir.y > 0;
-      if (isControllerMovingDown) {
+      let bothControllersMovingDown = this.leftDir.y >= 0 && this.rightDir.y >= 0;
+      if (bothControllersMovingDown) {
         // move up when controller is moving down, move faster with wider arm span
         dir.y = inverseControllerDir.y * (armWidth + 0.3);
 
