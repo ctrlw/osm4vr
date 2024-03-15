@@ -4,20 +4,32 @@
   <meta charset="utf-8">
   <title>ctrlw's VR experiments</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="glide.js"></script>
 </head>
 <body>
   <a-scene>
-    <a-entity id="info" text="value: Hello World;" position="1 1 1" scale="2 2 1"></a-entity>
-    <a-entity position="0 1.8 0" camera look-controls wasd-controls></a-entity>
-    <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: [mixin='box']"></a-entity>
-    <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: [mixin='box']" line="color: #118A7E"></a-entity>
-
+    <!-- The rig contains the camera and can move around, we start a bit back from centre -->
+    <a-entity id="rig" position="0 0 2" rotation="0 0 0">
+      <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
+      <a-entity id="head" camera look-controls wasd-controls log-position="target: chud" position="0 1.6 0">
+        <!-- "Head up displays" to show live data for camera and left/right hand controller -->
+        <a-entity id="lhud" text="value: left controller data" position="0.5 0 -2" scale="2 2 1"></a-entity>
+        <a-entity id="chud" text="value: head set data" position="1 0.5 -2" scale="2 2 1"></a-entity>
+        <a-entity id="rhud" text="value: right controller data" position="1.5 0 -2" scale="2 2 1"></a-entity>
+      </a-entity>
+      
+      <!-- The actual left and right hand controllers -->
+      <a-entity id="leftHand" laser-controls="hand: left" log-position="target: lhud"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" line="color: #118A7E" log-position="target: rhud"></a-entity>
+    </a-entity>
+    
     <a-sky color="#660000"></a-sky>
     <!--a-box color="#0000ff" position="0 0 0" width="1" height="2" depth="1"></a-box>
     <a-box color="#0000aa" position="1 1 -1" width="1" height="1" depth="1"></a-box-->
   </a-scene>
   
   <script>
+    // generate city grid
     var scene = document.querySelector('a-scene');
     let max_x = 10;
     let max_y = 10;
@@ -36,6 +48,21 @@
         scene.appendChild(box);
       }
     }
-  </script>
+
+    // define interactive elements
+    const head = document.getElementById('head');
+    const chud = document.getElementById('chud');
+    const lhud = document.getElementById('lhud');
+    const rhud = document.getElementById('rhud');
+    const rig = document.getElementById('rig');
+    const left = document.getElementById('leftHand');
+    const right = document.getElementById('rightHand');
+    left.addEventListener('axismove', e => {
+      lhud.setAttribute('text', 'value: ' + 'lmove')
+    });
+    right.addEventListener('axismove', e => {
+      rhud.setAttribute('text', 'value: ' + 'rmove')
+    });
+</script>
 </body>
 </html>
