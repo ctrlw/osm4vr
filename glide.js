@@ -82,7 +82,7 @@ AFRAME.registerComponent('log-position', {
         let areHandsDifferentHeight = Math.abs(armHeightDiff) > 0.2;
         if (areHandsDifferentHeight) {
           let angle = Math.tan(armHeightDiff / armWidth);
-          this.rigRot.y -= angle / 100;
+          this.rigRot.y -= angle / 1000;
         }      
       } else {
         // stop gliding when we're on the ground
