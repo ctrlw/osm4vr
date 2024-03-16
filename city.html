@@ -34,13 +34,19 @@
     let max_x = 10;
     let max_y = 10;
     let max_h = 15;
+    let box_width = 10;
+    let box_height = 3;
     for (let x = 0; x < max_x; ++x) {
       for (let y = 0; y < max_y; ++y) {
+        // set height to a random value between 0 and 3, prefering low values
         let h = 3 - Math.floor(Math.log2(Math.ceil(Math.random() * max_h)));
-        let box = document.createElement('a-box');
 
-        box.setAttribute('height', h);
-        let pos = [x, h/2, -y];
+        // set width, height, position and color
+        let box = document.createElement('a-box');
+        box.setAttribute('width', box_width);
+        box.setAttribute('depth', box_width);
+        box.setAttribute('height', h * box_height);
+        let pos = [x * box_width, 0, -y * box_width];
         box.setAttribute('position', pos.join(' '));
 
         let color = h < 2 ? '#00FF00' : '#AAAAAA';
