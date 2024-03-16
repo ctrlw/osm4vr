@@ -46,7 +46,7 @@
         box.setAttribute('width', box_width);
         box.setAttribute('depth', box_width);
         box.setAttribute('height', h * box_height);
-        let pos = [x * box_width, 0, -y * box_width];
+        let pos = [x * box_width, h * box_height / 2, -y * box_width];
         box.setAttribute('position', pos.join(' '));
 
         let color = h < 2 ? '#00FF00' : '#AAAAAA';
