@@ -4,14 +4,16 @@
   <meta charset="utf-8">
   <title>ctrlw's VR experiments</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="glide.js"></script>
+  <script src="log-position.js"></script>
+  <script src="angel.js"></script>
+  <script src="wing.js"></script>
 </head>
 <body>
   <a-scene>
     <!-- The rig contains the camera and can move around, we start a bit back from centre -->
     <a-entity id="rig" position="0 0 2" rotation="0 0 0">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
-      <a-entity id="head" camera look-controls wasd-controls log-position="target: chud" position="0 1.6 0">
+      <a-entity id="head" camera look-controls wasd-controls angel log-position="target: chud" position="0 1.6 0">
         <!-- "Head up displays" to show live data for camera and left/right hand controller -->
         <a-entity id="lhud" text="value: left controller data" position="0.5 0 -2" scale="2 2 1"></a-entity>
         <a-entity id="chud" text="value: head set data" position="1 0.5 -2" scale="2 2 1"></a-entity>
@@ -19,13 +21,11 @@
       </a-entity>
       
       <!-- The actual left and right hand controllers -->
-      <a-entity id="leftHand" laser-controls="hand: left" log-position="target: lhud"></a-entity>
-      <a-entity id="rightHand" laser-controls="hand: right" line="color: #118A7E" log-position="target: rhud"></a-entity>
+      <a-entity id="leftHand" laser-controls="hand: left" wing log-position="target: lhud"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" wing line="color: #118A7E" log-position="target: rhud"></a-entity>
     </a-entity>
     
     <a-sky color="#660000"></a-sky>
-    <!--a-box color="#0000ff" position="0 0 0" width="1" height="2" depth="1"></a-box>
-    <a-box color="#0000aa" position="1 1 -1" width="1" height="1" depth="1"></a-box-->
   </a-scene>
   
   <script>
