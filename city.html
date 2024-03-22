@@ -22,7 +22,7 @@
       
       <!-- The actual left and right hand controllers -->
       <a-entity id="leftHand" laser-controls="hand: left" wing log-position="target: lhud"></a-entity>
-      <a-entity id="rightHand" laser-controls="hand: right" wing line="color: #118A7E" log-position="target: rhud"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" wing log-position="target: rhud"></a-entity>
     </a-entity>
     
     <a-sky color="#660000"></a-sky>
@@ -54,21 +54,6 @@
         scene.appendChild(box);
       }
     }
-
-    // define interactive elements
-    const head = document.getElementById('head');
-    const chud = document.getElementById('chud');
-    const lhud = document.getElementById('lhud');
-    const rhud = document.getElementById('rhud');
-    const rig = document.getElementById('rig');
-    const left = document.getElementById('leftHand');
-    const right = document.getElementById('rightHand');
-    left.addEventListener('axismove', e => {
-      lhud.setAttribute('text', 'value: ' + 'lmove')
-    });
-    right.addEventListener('axismove', e => {
-      rhud.setAttribute('text', 'value: ' + 'rmove')
-    });
 </script>
 </body>
 </html>
