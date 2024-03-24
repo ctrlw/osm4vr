@@ -5,7 +5,7 @@ function toString(pos) {
   return [x, y, z].join(" ");
 }
 
-AFRAME.registerComponent('log-position', {
+AFRAME.registerComponent('log2hud', {
   schema: {
     target: {type: 'string', default: 'chud'}
   },

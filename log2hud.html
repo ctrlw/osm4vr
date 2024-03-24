@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ctrlw's VR experiments</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="log2hud.js"></script>
+</head>
+<body>
+  <!-- HTML buttons to mimic buttons of hand controllers in non-VR mode -->
+  <button id="lbtn" style="z-index: 999; position: relative">Left</button>
+  <button id="cbtn" style="z-index: 999; position: relative">Ok</button>
+  <button id="rbtn" style="z-index: 999; position: relative">Right</button>
+
+  <!-- The scene contains all VR related items -->
+  <a-scene>
+    <!-- The rig contains the camera and can move around, we start a bit back from centre -->
+    <a-entity id="rig" position="0 0 2" rotation="0 0 0">
+      <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
+      <a-entity id="head" camera look-controls wasd-controls log2hud="target: chud" position="0 1.6 0">
+        <!-- "Head up displays" to show live data for camera and left/right hand controller -->
+        <a-entity id="lhud" text="value: left controller data" position="0.5 0 -2" scale="2 2 1"></a-entity>
+        <a-entity id="chud" text="value: head set data" position="1 0.5 -2" scale="2 2 1"></a-entity>
+        <a-entity id="rhud" text="value: right controller data" position="1.5 0 -2" scale="2 2 1"></a-entity>
+      </a-entity>
+      
+      <!-- The actual left and right hand controllers -->
+      <a-entity id="leftHand" laser-controls="hand: left" log2hud="target: lhud"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" log2hud="target: rhud"></a-entity>
+    </a-entity>
+    
+    <!-- A central "floor", slightly below 0 to avoid intersecting with boxes on the floor -->
+    <a-plane color="#005500" position="0 -0.1 0" height="10" width="10" rotation="-90 0 0"></a-plane>
+    <!-- Sky background -->
+    <a-sky color="#660000"></a-sky>
+
+    <!-- Some labels to show how the position works, i.e. "left/right height back/front" -->
+    <a-entity text="value: 0, 0, 0" position="0 0.1 0" ></a-entity>
+    <a-entity text="value: 1, 0, 0" position="1 0.1 0" ></a-entity>
+    <a-entity text="value: 2, 0, 0" position="2 0.1 0" ></a-entity>
+    <a-entity text="value: 0, 0, 0.5" position="0 0.1 0.5" ></a-entity>
+    <a-entity text="value: 1, 0, 0.5" position="1 0.1 0.5" ></a-entity>
+    <a-entity text="value: 2, 0, 0.5" position="2 0.1 0.5" ></a-entity>
+    <a-entity text="value: 0, 0, -0.5" position="0 0.1 -0.5" ></a-entity>
+    <a-entity text="value: 1, 0, -0.5" position="1 0.1 -0.5" ></a-entity>
+    <a-entity text="value: 2, 0, -0.5" position="2 0.1 -0.5" ></a-entity>
+    
+    <!-- Zero-height i.e. flat boxes, essentially just squares on floor level -->
+    <a-box color="red" position="0 0 0" width="1" height="0" depth="1"></a-box>
+    <a-box color="yellow" position="1 0 0" width="1" height="0" depth="1"></a-box>
+
+    <!-- Boxes with actual heights, further away and with position centered at mid height -->
+    <a-box color="#0000ff" position="0 1 -1" width="1" height="2" depth="1"></a-box>
+    <a-box color="#0000aa" position="1 0.5 -1" width="1" height="1" depth="1"></a-box>
+    <!-- Labels for the boxes with heights -->
+    <a-entity text="value: [0,1], [0,2], [-1,0];" position="0.5 1 -0.5" ></a-entity>
+    <a-entity text="value: [1,2], [0,1], [-1,0];" position="1.5 0.5 -0.5" ></a-entity>
+    
+    <a-sphere color="#ffcccc" position="-1 1 -1" radius="0.5"></a-sphere>
+  </a-scene>
+
+  <!-- Some javascript to interact with the scene and its contents -->
+  <script>
+    const head = document.getElementById('head');
+    const chud = document.getElementById('chud');
+    const lhud = document.getElementById('lhud');
+    const rhud = document.getElementById('rhud');
+    const rig = document.getElementById('rig');
+    
+    document.getElementById("cbtn").addEventListener('click', e => {
+      chud.setAttribute('text', 'value: ' + 'bla');
+      const sphere = document.querySelector('a-sphere');
+      sphere.setAttribute('radius', Math.random() + 0.5);
+    });
+    document.getElementById("lbtn").addEventListener('click', e => {
+      lhud.setAttribute('text', 'value: ' + 'left');
+      rig.object3D.position.y -= 0.1;
+    });
+    document.getElementById("rbtn").addEventListener('click', e => {
+      rhud.setAttribute('text', 'value: ' + 'right');
+      rig.object3D.position.y += 0.1;
+    });
+    
+    const left = document.getElementById('leftHand');
+    const right = document.getElementById('rightHand');
+    left.addEventListener('buttonchanged', e => {
+      lhud.setAttribute('text', 'value: ' + 'left');
+    });
+    right.addEventListener('buttonchanged', e => {
+      rhud.setAttribute('text', 'value: ' + 'right')
+    });    
+    left.addEventListener('axismove', e => {
+      lhud.setAttribute('text', 'value: ' + 'lmove')
+    });
+    right.addEventListener('axismove', e => {
+      rhud.setAttribute('text', 'value: ' + 'rmove')
+    });
+    
+  </script>
+</body>
+</html>

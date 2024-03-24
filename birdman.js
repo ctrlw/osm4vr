@@ -14,7 +14,7 @@
     return drag * Math.sqrt(2 * g * wingLoading / (density * uplift));
   }
   
-  AFRAME.registerComponent('angel', {
+  AFRAME.registerComponent('birdman', {
     schema: {
     },
     
