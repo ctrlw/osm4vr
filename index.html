@@ -10,6 +10,10 @@
 </head>
 <body>
   <a-scene>
+    <a-assets>
+      <img id="skyTexture" crossorigin="anonymous" src="https://cdn.aframe.io/a-painter/images/sky.jpg">
+    </a-assets>
+
     <!-- The rig contains the camera and can move around, we start a bit back from centre -->
     <a-entity id="rig" position="0 0 2" rotation="0 0 0">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
@@ -24,8 +28,8 @@
       <a-entity id="leftHand" laser-controls="hand: left" wing log2hud="target: lhud"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right" wing log2hud="target: rhud"></a-entity>
     </a-entity>
-    
-    <a-sky color="#660000"></a-sky>
+        
+    <a-sky id="background" src="#skyTexture" theta-length="90"></a-sky>
   </a-scene>
   
   <script>
