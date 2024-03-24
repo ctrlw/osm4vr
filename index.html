@@ -44,6 +44,9 @@
       for (let y = 0; y < max_y; ++y) {
         // set height to a random value between 0 and 3, prefering low values
         let h = 3 - Math.floor(Math.log2(Math.ceil(Math.random() * max_h)));
+        if (x == 0 && y == 0) {
+          h = 0; // no block on start position 
+        }
 
         // set width, height, position and color
         let box = document.createElement('a-box');
