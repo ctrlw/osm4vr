@@ -1,7 +1,6 @@
 <html>
   <head>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <script src="https://unpkg.com/aframe-geo-projection-component/dist/aframe-geo-projection-component.min.js"></script>
   </head>
   <body>
@@ -15,11 +14,11 @@
                 geojson-loader="src: #json-world;"
                 geo-projection="
                   projection: geoMercator;
-                  height: 10;
-                  width: 20;
+                  height: 100;
+                  width: 200;
                         "
                 geo-shape-renderer
-                geo-outline-renderer="color: red;"
+                geo-extrude-renderer="extrudeAmount: 1;"
       >
       </a-entity>
     </a-scene>
