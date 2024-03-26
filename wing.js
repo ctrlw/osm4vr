@@ -12,9 +12,6 @@ AFRAME.registerComponent('wing', {
   tick: function () {
     let rot = this.el.getAttribute('rotation');
     let pos = this.el.getAttribute('position');
-    let s = "rot: " + toString(rot) + "\npos: " + toString(pos);
-    const hud = document.getElementById(this.data.target);
-    hud.setAttribute('text', 'value: ' + s);
 
     // opposite direction of controller movement, with smoothing
     // equation: invdir = invdir / 2 + oldPos - pos
