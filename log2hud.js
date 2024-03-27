@@ -17,7 +17,7 @@ AFRAME.registerComponent('log2hud', {
   tick: function () {
     var rotation = this.el.getAttribute('rotation');
     var pos = this.el.getAttribute('position');
-    var s = "rot: " + toString(rotation) + "\npos: " + toString(pos);
+    var s = "pos: " + toString(pos) + "\nrot: " + toString(rotation);
     // console.log(s);
     this.hud.setAttribute('text', 'value: ' + s);
   }
