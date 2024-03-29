@@ -32,14 +32,14 @@
     </a-entity>
 
     <a-sky id="background" src="#skyTexture" theta-length="90"></a-sky>
-    <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0"></a-plane>
+    <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0" shadow="receive: true"></a-plane>
     <a-entity rotation="-90 0 0"
       material="color: #cccccc;"
       geojson-loader="src: #json-world;"
       geo-projection="projection: geoMercator; height: 500; width: 1000;"
       geo-extrude-renderer="extrudeAmount: 5;"
+      shadow="cast: true"
     >
-
   </a-scene>
 </body>
 </html>
