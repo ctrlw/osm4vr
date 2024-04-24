@@ -10,6 +10,9 @@
   <script src="wing.js"></script>
 </head>
 <body>
+  <!-- HTML button to control flying in non-VR mode -->
+  <button id="fbtn" style="z-index: 999; position: relative">Flap</button>
+
   <a-scene>
     <a-assets>
       <img id="skyTexture" crossorigin="anonymous" src="https://cdn.aframe.io/a-painter/images/sky.jpg">
@@ -40,6 +43,20 @@
       geo-extrude-renderer="extrudeAmount: 5;"
       shadow="cast: true"
     >
+    </a-entity>
   </a-scene>
+
+  <!-- Some javascript to interact with the scene and its contents -->
+  <script>
+    const rig = document.getElementById('rig');
+    const head = document.getElementById('head');
+    const VAXIS = new THREE.Vector3(0, 1, 0);
+    
+    document.getElementById("fbtn").addEventListener('click', e => {
+      rig.object3D.position.y += 5;
+      head.components.birdman.dir.z = -0.1;
+      head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
+    });
+  </script>
 </body>
 </html>
