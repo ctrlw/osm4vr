@@ -94,6 +94,15 @@ function feature2height(feature) {
   return LEVEL_HEIGHT_M;
 }
 
+// Extract or estimate building colour
+function feature2color(feature) {
+  let properties = feature.properties;
+  if ('building:colour' in properties) {
+    return properties['building:colour'];
+  }
+  return 'gray';
+}
+
 // Convert the geojson feature of a building into a 3d Aframe entity
 // baseLat and baseLon are used as reference position to convert geocoordinates to meters on plane
 function feature2building(feature, baseLat, baseLon) {
@@ -103,7 +112,7 @@ function feature2building(feature, baseLat, baseLon) {
   let height_m = feature2height(feature);
   let building = createBuilding(xyCoords, height_m);
 
-  let color = properties.color || 'gray';
+  let color = feature2color(feature);
   let material = `color: ${color}; opacity: 1.0;`;
   building.setAttribute('material', material);
   return building;
