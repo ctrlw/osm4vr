@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Fly through a city</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/aframe-geo-projection-component/dist/aframe-geo-projection-component.min.js"></script>
+  <script src="geojson.js"></script>
   <script src="log2hud.js"></script>
   <script src="birdman.js"></script>
   <script src="wing.js"></script>
@@ -36,14 +36,7 @@
 
     <a-sky id="background" src="#skyTexture" theta-length="90"></a-sky>
     <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0" shadow="receive: true"></a-plane>
-    <a-entity rotation="-90 0 0"
-      material="color: #cccccc;"
-      geojson-loader="src: #json-world;"
-      geo-projection="projection: geoMercator; height: 500; width: 1000;"
-      geo-extrude-renderer="extrudeAmount: 5;"
-      shadow="cast: true"
-    >
-    </a-entity>
+    <a-entity geojson="src: #json-world;"></a-entity>
   </a-scene>
 
   <!-- Some javascript to interact with the scene and its contents -->
