@@ -53,10 +53,13 @@ function coords2plane(coords, baseLat, baseLon) {
 
 // Create the Aframe geometry by extruding building footprints to given height
 // xyCoords is an array of [x,y] positions in meters, e.g. [[0, 0], [1, 0], [1, 1], [0, 1]]
-function createGeometry(xyCoords, height) {
-  var shape = new THREE.Shape(xyCoords.map(xy => new THREE.Vector2(xy[0], xy[1])));
-  // console.log(height, shape);
-  var geometry = new THREE.ExtrudeGeometry(shape, {depth: height, bevelEnabled: false});
+// xyHoles is an optional array of paths to describe holes in the building footprint
+function createGeometry(xyCoords, xyHoles, height) {
+  let shape = new THREE.Shape(xyCoords.map(xy => new THREE.Vector2(xy[0], xy[1])));
+  for (let hole of xyHoles) {
+    shape.holes.push(new THREE.Path(hole.map(xy => new THREE.Vector2(xy[0], xy[1]))));
+  }
+  let geometry = new THREE.ExtrudeGeometry(shape, {depth: height, bevelEnabled: false});
 
   // ExtrudeGeometry expects x and y as base shape and extrudes z, rotate to match
   geometry.rotateX(-Math.PI / 2);
@@ -64,9 +67,9 @@ function createGeometry(xyCoords, height) {
 }
 
 // Generate a building from outline and height, both in meters
-function createBuilding(xyCoords, height) {
+function createBuilding(xyCoords, xyHoles, height) {
   // Create a mesh with the geometry and a material
-  let geometry = createGeometry(xyCoords, height);
+  let geometry = createGeometry(xyCoords, xyHoles, height);
   let material = new THREE.MeshBasicMaterial({color: 0xaabbcc});
   let mesh = new THREE.Mesh(geometry, material);
   let entity = document.createElement('a-entity');
@@ -113,11 +116,14 @@ function feature2color(feature) {
 // Convert the geojson feature of a building into a 3d Aframe entity
 // baseLat and baseLon are used as reference position to convert geocoordinates to meters on plane
 function feature2building(feature, baseLat, baseLon) {
-  let properties = feature.properties;
-  let coords = feature.geometry.coordinates[0];
-  let xyCoords = coords2plane(coords, baseLat, baseLon);
+  let paths = feature.geometry.coordinates;
+  let xyOutline = coords2plane(paths[0], baseLat, baseLon);
+  let xyHoles = []; // Add holes to the building if more than one path given
+  for (let i = 1; i < paths.length; i++) {
+    xyHoles.push(coords2plane(paths[i], baseLat, baseLon));
+  }
   let height_m = feature2height(feature);
-  let building = createBuilding(xyCoords, height_m);
+  let building = createBuilding(xyOutline, xyHoles, height_m);
 
   let color = feature2color(feature);
   let material = `color: ${color}; opacity: 1.0;`;
