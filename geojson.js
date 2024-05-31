@@ -2,6 +2,10 @@ const EQUATOR_M = 40075017; // equatorial circumference in meters
 const POLES_M   = 40007863; // polar circumference in meters
 const FEET_TO_METER = 0.3048;
 const LEVEL_HEIGHT_M = 3; // default height in meters for a single building level
+const BUILDING_TO_METER = {
+  'church': 20,
+  'water_tower': 20
+}
 
 // Compute square bounding box around the given point
 function boundingBox(lat, lon, radius_m) {
@@ -89,6 +93,12 @@ function feature2height(feature) {
   }
   if ("building:levels" in properties) {
     return parseInt(properties["building:levels"]) * LEVEL_HEIGHT_M;
+  }
+  if (properties.building in BUILDING_TO_METER) {
+    return BUILDING_TO_METER[properties.building];
+  }
+  if (properties.man_made in BUILDING_TO_METER) {
+    return BUILDING_TO_METER[properties.man_made];
   }
   // default to single level height
   return LEVEL_HEIGHT_M;
