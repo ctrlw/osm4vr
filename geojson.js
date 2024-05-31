@@ -60,9 +60,6 @@ function createGeometry(xyCoords, height) {
 
   // ExtrudeGeometry expects x and y as base shape and extrudes z, rotate to match
   geometry.rotateX(-Math.PI / 2);
-  geometry.rotateY(Math.PI);
-  geometry.rotateZ(Math.PI);
-  geometry.translate(0, height, 0);
   return geometry;
 }
 
