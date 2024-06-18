@@ -58,29 +58,40 @@ AFRAME.registerComponent('osm-tiles', {
   },
 
   init: function () {
-    console.log(this.data);
+    // console.log(this.data);
     this.tilesLoaded = {}; // contains each x,y tile id that has been added
 
-    let tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
-    this.tileSize_m = tileSize_m;
+    this.tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
 
-    let tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
-    this.tileBase = tileBase;
+    this.tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
+    this.loadTilesAround(0, 0);
+  },
 
+  // Check if all tiles within the given radius around the position are loaded, and load them if not
+  // x_m, y_m is the position in meters on the Aframe plane
+  loadTilesAround: function(x_m, y_m) {
+    let tileX = this.tileBase[0] + x_m / this.tileSize_m;
+    let tileY = this.tileBase[1] + y_m / this.tileSize_m;
+
+    let radius = this.data.radius_m / this.tileSize_m;
     let nTiles = 2 ** this.data.zoom;
-    let startX = Math.max(0, Math.floor(tileBase[0] - this.data.radius_m / tileSize_m));
-    let startY = Math.max(0, Math.floor(tileBase[1] - this.data.radius_m / tileSize_m));
-    let endX = Math.min(nTiles, Math.ceil(tileBase[0] + this.data.radius_m / tileSize_m));
-    let endY = Math.min(nTiles, Math.ceil(tileBase[1] + this.data.radius_m / tileSize_m));
+    let startX = Math.floor(tileX - radius);
+    let startY = Math.max(0, Math.floor(tileY - radius));
+    let endX = Math.ceil(tileX + radius);
+    let endY = Math.min(nTiles, Math.ceil(tileY + radius));
+    // using modulo for horizontal axis to wrap around the date line
+    startX = (startX + nTiles) % nTiles;
+    endX = (endX + nTiles) % nTiles;
 
-    // load all tiles that intersect with the bounding box of the given radius around the given lat/lon
     for (let y = startY; y < endY; y++) {
-      this.tilesLoaded[y] = new Set();
+      this.tilesLoaded[y] = this.tilesLoaded[y] || new Set();
       for (let x = startX; x < endX; x++) {
-        let tile = loadTile(x, y, this.data.zoom, tileSize_m, tileBase);
-        this.el.appendChild(tile);
-        this.tilesLoaded[y].add(x);
+        if (!this.tilesLoaded[y].has(x)) {
+          let tile = loadTile(x, y, this.data.zoom, this.tileSize_m, this.tileBase);
+          this.el.appendChild(tile);
+          this.tilesLoaded[y].add(x);
+        }
       }
     }
-  },
+  }
 });
