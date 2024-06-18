@@ -5,6 +5,7 @@
   <title>Fly through a city</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="geojson.js"></script>
+  <script src="osm-tiles.js"></script>
   <script src="log2hud.js"></script>
   <script src="birdman.js"></script>
   <script src="wing.js"></script>
@@ -34,9 +35,8 @@
       <a-entity id="rightHand" laser-controls="hand: right" wing log2hud="target: rhud"></a-entity>
     </a-entity>
 
-    <!-- <a-sky id="background" src="#skyTexture" theta-length="90"></a-sky> -->
-    <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0" shadow="receive: true"></a-plane>
-    <a-entity geojson="src: #json-world;"></a-entity>
+    <a-entity osm-tiles="lat: 49.16; lon: 10.163; zoom: 16" rotation="-90 0 0" shadow="receive: true"></a-entity>
+    <a-entity geojson="lat: 49.16; lon: 10.163; src: #json-world"></a-entity>
   </a-scene>
 
   <!-- Some javascript to interact with the scene and its contents -->
