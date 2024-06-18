@@ -1,7 +1,39 @@
 // AFrame component to load OpenStreetMap tiles around a given lat/lon, usually on a flat plane
+//
+// Internally we have to deal with 3 coordinate systems:
+// * Geocoordinates (lat, lon) in degrees
+//     -180                  180
+//  90 +-----------+-----------+
+//     |           |           |
+//     |           |           |
+//     +-----------+-----------+
+//     |           |           |
+//     |           |           |
+// -90 +-----------+-----------+
+//
+// * Tile coordinates (x, y), i.e. 0 to 2^zoom - 1, as the map is divided into tiles
+//   Tiles use the Web Mercator projection, assuming the earth is a sphere
+//   See https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+//            0              2^zoom - 1
+//          0 +-----------+-----------+
+//            |    0,0    |    1,0    |  coordinates inside tiles for zoom level 1
+//            |           |           |
+//            +-----------+-----------+
+//            |    0,1    |    1,1    |
+//            |           |           |
+// 2^zoom - 1 +-----------+-----------+
+//
+// * Plane coordinates (x, y) in meters, we take the start lat/lon as origin (0,0)
+//      -inf                  inf
+// -inf +-----------+-----------+
+//      |           |   0,-1    |
+//      |          -2,0 0,0 2,0 |
+//      +-----------+-----------+
+//      |           |           |
+//      |           |           |
+//  inf +-----------+-----------+
 
 // Convert geocoordinates to tile coordinates for given zoom level
-// See https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 // Returns floating point values where
 // * the integer part is the tile id
 // * the fractional part is the position within the tile
@@ -67,7 +99,7 @@ AFRAME.registerComponent('osm-tiles', {
     this.loadTilesAround(0, 0);
   },
 
-  // Check if all tiles within the given radius around the position are loaded, and load them if not
+  // Check if all tiles within the default radius around x_m, y_m are loaded, load them if not
   // x_m, y_m is the position in meters on the Aframe plane
   loadTilesAround: function(x_m, y_m) {
     let tileX = this.tileBase[0] + x_m / this.tileSize_m;
