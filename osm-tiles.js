@@ -53,8 +53,8 @@ AFRAME.registerComponent('osm-tiles', {
   schema: {
     lat: {type: 'number'},
     lon: {type: 'number'},
-    radius_m: {type: 'number', default: 1000},
-    zoom: {type: 'number', default: 14}
+    radius_m: {type: 'number', default: 500},
+    zoom: {type: 'number', default: 16}
   },
 
   init: function () {
