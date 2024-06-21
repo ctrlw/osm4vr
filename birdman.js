@@ -29,9 +29,7 @@
   
       this.dir = new THREE.Vector3(0, 0, 0); // horizontal movement direction
   
-      this.VAXIS = new THREE.Vector3(0, 1, 0);
-      
-      this.ground = document.getElementById('ground');
+      this.VAXIS = new THREE.Vector3(0, 1, 0);      
     },
   
     tick: function (time, timeDelta) {
@@ -96,12 +94,6 @@
       let factor = 0.3;
       this.dir.x += dir.x * factor;
       this.dir.z += dir.z * factor;
-
-      // fetch missing tiles if needed
-      // TODO: use events instead of hardcoding the call
-      if (this.ground && this.ground.components['osm-tiles']) {
-        this.ground.components['osm-tiles'].loadTilesAround(this.rig.x, this.rig.z);
-      }
     }    
   })
   

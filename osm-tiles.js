@@ -86,7 +86,8 @@ AFRAME.registerComponent('osm-tiles', {
     lat: {type: 'number'},
     lon: {type: 'number'},
     radius_m: {type: 'number', default: 500},
-    zoom: {type: 'number', default: 16}
+    zoom: {type: 'number', default: 16},
+    trackId: {type: 'string'} // component's id whose position we track for dynamic tile loading
   },
 
   init: function () {
@@ -97,6 +98,20 @@ AFRAME.registerComponent('osm-tiles', {
 
     this.tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
     this.loadTilesAround(0, 0);
+    
+    // if trackId attribute is given, keep track of the element's position
+    if (this.data.trackId) {
+      let element = document.getElementById(this.data.trackId);
+      if (element && element.object3D && element.object3D.position) {
+        this.trackPosition = element.object3D.position;
+      }
+    }
+  },
+  
+  tick: function () {
+    if (this.trackPosition) {
+      this.loadTilesAround(this.trackPosition.x, this.trackPosition.z);
+    }
   },
 
   // Check if all tiles within the default radius around x_m, y_m are loaded, load them if not
