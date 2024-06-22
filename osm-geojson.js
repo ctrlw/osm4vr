@@ -202,7 +202,7 @@ AFRAME.registerComponent('osm-geojson', {
   },
 
   init: function () {
-    this.tilesLoaded = {}; // contains each x,y tile id that has been loaded
+    this.tilesLoaded = new Set(); // contains each x,y tile id that has been loaded
     this.featuresLoaded = {}; // contains each feature id that has been added
     this.tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
     this.tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
@@ -272,9 +272,9 @@ AFRAME.registerComponent('osm-geojson', {
     
     let bboxSWNE = []; // bounding box in [south,west,north,east] degrees
     for (let y = startY; y < endY; y++) {
-      this.tilesLoaded[y] = this.tilesLoaded[y] || new Set();
       for (let x = startX; x < endX; x++) {
-        if (!this.tilesLoaded[y].has(x)) {
+        let xy = y << this.data.zoom + x;
+        if (!this.tilesLoaded.has(xy)) {
           let bbox = tile2bbox(x, y, this.data.zoom);
           if (bboxSWNE.length == 0) {
             bboxSWNE = bbox;
@@ -284,7 +284,7 @@ AFRAME.registerComponent('osm-geojson', {
             bboxSWNE[2] = Math.max(bboxSWNE[2], bbox[2]);
             bboxSWNE[3] = Math.max(bboxSWNE[3], bbox[3]);
           }
-          this.tilesLoaded[y].add(x); // mark tile as loaded BEFORE the request to avoid multiple requests
+          this.tilesLoaded.add(xy); // mark tile as loaded BEFORE the request to avoid multiple requests
         }
       }
     }

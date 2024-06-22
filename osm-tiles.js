@@ -92,7 +92,7 @@ AFRAME.registerComponent('osm-tiles', {
 
   init: function () {
     // console.log(this.data);
-    this.tilesLoaded = {}; // contains each x,y tile id that has been added
+    this.tilesLoaded = new Set(); // contains each x,y tile id that has been added
 
     this.tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
 
@@ -131,12 +131,12 @@ AFRAME.registerComponent('osm-tiles', {
     endX = (endX + nTiles) % nTiles;
 
     for (let y = startY; y < endY; y++) {
-      this.tilesLoaded[y] = this.tilesLoaded[y] || new Set();
       for (let x = startX; x < endX; x++) {
-        if (!this.tilesLoaded[y].has(x)) {
+        let xy = y << this.data.zoom + x;
+        if (!this.tilesLoaded.has(xy)) {
           let tile = loadTile(x, y, this.data.zoom, this.tileSize_m, this.tileBase);
           this.el.appendChild(tile);
-          this.tilesLoaded[y].add(x);
+          this.tilesLoaded.add(xy);
         }
       }
     }
