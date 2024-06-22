@@ -211,7 +211,7 @@ AFRAME.registerComponent('osm-geojson', {
     this.loader = new THREE.FileLoader();
     this.onSrcLoaded = this.onSrcLoaded.bind(this);
 
-    this.loadTilesAround(0, 0);
+    this.loadTilesAround(new THREE.Vector3(0, 0, 0));
 
     // if trackId attribute is given, keep track of the element's position
     if (this.data.trackId) {
@@ -224,7 +224,7 @@ AFRAME.registerComponent('osm-geojson', {
 
   tick: function () {
     if (this.trackPosition) {
-      this.loadTilesAround(this.trackPosition.x, this.trackPosition.z);
+      this.loadTilesAround(this.trackPosition);
     }
   },
 
@@ -252,12 +252,12 @@ AFRAME.registerComponent('osm-geojson', {
     }
   },
 
-  // Check if all tiles within the default radius around x_m, y_m are completely loaded
+  // Check if all tiles within the default radius around the given position are fully loaded
   // otherwise load the missing ones as a single bounding box
-  // x_m, y_m is the position in meters on the Aframe plane
-  loadTilesAround: function(x_m, y_m) {
-    let tileX = this.tileBase[0] + x_m / this.tileSize_m;
-    let tileY = this.tileBase[1] + y_m / this.tileSize_m;
+  // pos is the position in meters on the Aframe plane, we ignore the height
+  loadTilesAround: function(pos) {
+    let tileX = this.tileBase[0] + pos.x / this.tileSize_m;
+    let tileY = this.tileBase[1] + pos.z / this.tileSize_m;
 
     let radius = this.data.radius_m / this.tileSize_m;
     let nTiles = 2 ** this.data.zoom;

@@ -56,7 +56,7 @@ function lat2tileWidth_m(lat, zoom) {
 // Create an Aframe plane with a given tile's image url, and size and position in meters
 // The plane position sets x,y although Aframe uses x,z for 3D, so needs to be rotated later
 function createTile(x_m, y_m, url, width_m, height_m) {
-  console.log(x_m, y_m, width_m, height_m, url);  
+  // console.log(x_m, y_m, width_m, height_m, url);  
   let tile = document.createElement('a-plane');
   tile.setAttribute('src', url);
   tile.setAttribute('width', width_m);
@@ -97,7 +97,7 @@ AFRAME.registerComponent('osm-tiles', {
     this.tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
 
     this.tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
-    this.loadTilesAround(0, 0);
+    this.loadTilesAround(new THREE.Vector3(0, 0, 0));
     
     // if trackId attribute is given, keep track of the element's position
     if (this.data.trackId) {
@@ -110,15 +110,15 @@ AFRAME.registerComponent('osm-tiles', {
   
   tick: function () {
     if (this.trackPosition) {
-      this.loadTilesAround(this.trackPosition.x, this.trackPosition.z);
+      this.loadTilesAround(this.trackPosition);
     }
   },
 
-  // Check if all tiles within the default radius around x_m, y_m are loaded, load them if not
-  // x_m, y_m is the position in meters on the Aframe plane
-  loadTilesAround: function(x_m, y_m) {
-    let tileX = this.tileBase[0] + x_m / this.tileSize_m;
-    let tileY = this.tileBase[1] + y_m / this.tileSize_m;
+  // Check if all tiles within the default radius around the given position are loaded, load if not
+  // pos is the position in meters on the Aframe plane, we ignore the height
+  loadTilesAround: function(pos) {
+    let tileX = this.tileBase[0] + pos.x / this.tileSize_m;
+    let tileY = this.tileBase[1] + pos.z / this.tileSize_m;
 
     let radius = this.data.radius_m / this.tileSize_m;
     let nTiles = 2 ** this.data.zoom;
