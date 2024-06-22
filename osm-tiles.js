@@ -65,29 +65,14 @@ function createTile(x_m, y_m, url, width_m, height_m) {
   return tile;
 }
 
-// Create an OpenStreetMap tile for given x,y tile coordinates and zoom level
-// Example url for Berlin center at zoom level 14: https://tile.openstreetmap.org/14/8802/5373.png
-// tileSize_m sets the width and length of the tile in meters
-//  for real-world size this depends on the zoom level and the latitude of the origin
-// tileBase is the (0,0) origin of the Aframe plane in tile coordinates [x,y]
-//  e.g. [8802.5, 5373.5] for the middle of the Berlin center tile at zoom level 14
-function loadTile(x, y, zoom, tileSize_m, tileBase) {
-  let url = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
-  let x_m = (x - tileBase[0] + 0.5) * tileSize_m;
-  let y_m = (y - tileBase[1] + 0.5) * tileSize_m;
-  let tile = createTile(x_m, -y_m, url, tileSize_m, tileSize_m);
-  // let tile = createTile(x_m / tileSize_m, -y_m / tileSize_m, url, 1, 1);
-  return tile;
-}
-
-
 AFRAME.registerComponent('osm-tiles', {
   schema: {
     lat: {type: 'number'},
     lon: {type: 'number'},
     radius_m: {type: 'number', default: 500},
     zoom: {type: 'number', default: 16},
-    trackId: {type: 'string'} // component's id whose position we track for dynamic tile loading
+    trackId: {type: 'string'}, // component's id whose position we track for dynamic tile loading
+    url: {type: 'string', default: 'https://tile.openstreetmap.org/'} // tileServer base url
   },
 
   init: function () {
@@ -114,6 +99,21 @@ AFRAME.registerComponent('osm-tiles', {
     }
   },
 
+  // Create an OpenStreetMap tile for given x,y tile coordinates and zoom level
+  // Example url for Berlin center at zoom level 14: https://tile.openstreetmap.org/14/8802/5373.png
+  // tileSize_m sets the width and length of the tile in meters
+  //  for real-world size this depends on the zoom level and the latitude of the origin
+  // tileBase is the (0,0) origin of the Aframe plane in tile coordinates [x,y]
+  //  e.g. [8802.5, 5373.5] for the middle of the Berlin center tile at zoom level 14
+  loadTile: function(x, y) {
+    let url = this.data.url + `${this.data.zoom}/${x}/${y}.png`;
+    let x_m = (x - this.tileBase[0] + 0.5) * this.tileSize_m;
+    let y_m = (y - this.tileBase[1] + 0.5) * this.tileSize_m;
+    let tile = createTile(x_m, -y_m, url, this.tileSize_m, this.tileSize_m);
+    // let tile = createTile(x_m / this.tileSize_m, -y_m / this.tileSize_m, url, 1, 1);
+    return tile;
+  },
+
   // Check if all tiles within the default radius around the given position are loaded, load if not
   // pos is the position in meters on the Aframe plane, we ignore the height
   loadTilesAround: function(pos) {
@@ -134,7 +134,7 @@ AFRAME.registerComponent('osm-tiles', {
       for (let x = startX; x < endX; x++) {
         let xy = y << this.data.zoom + x;
         if (!this.tilesLoaded.has(xy)) {
-          let tile = loadTile(x, y, this.data.zoom, this.tileSize_m, this.tileBase);
+          let tile = this.loadTile(x, y);
           this.el.appendChild(tile);
           this.tilesLoaded.add(xy);
         }
