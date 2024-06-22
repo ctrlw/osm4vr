@@ -33,37 +33,6 @@
 //      |           |           |
 //  inf +-----------+-----------+
 
-// Convert geocoordinates to tile coordinates for given zoom level
-// Returns floating point values where
-// * the integer part is the tile id
-// * the fractional part is the position within the tile
-function latlon2fractionalTileId(lat, lon, zoom) {
-  let nTiles = 2 ** zoom;
-  let latRad = lat * Math.PI / 180;
-  let x = nTiles * (lon + 180) / 360;
-  let y = nTiles * (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2;
-  return [x, y];
-}
-
-// Convert latitude to width in meters for given zoom level
-function lat2tileWidth_m(lat, zoom) {
-  const EQUATOR_M = 40075017; // equatorial circumference in meters
-  let nTiles = 2 ** zoom;
-  let circumference_m = EQUATOR_M * Math.cos(lat * Math.PI / 180);
-  return circumference_m / nTiles;
-}
-
-// Create an Aframe plane with a given tile's image url, and size and position in meters
-// The plane position sets x,y although Aframe uses x,z for 3D, so needs to be rotated later
-function createTile(x_m, y_m, url, width_m, height_m) {
-  // console.log(x_m, y_m, width_m, height_m, url);  
-  let tile = document.createElement('a-plane');
-  tile.setAttribute('src', url);
-  tile.setAttribute('width', width_m);
-  tile.setAttribute('height', height_m);
-  tile.setAttribute('position', {x: x_m, y: y_m, z: 0});
-  return tile;
-}
 
 AFRAME.registerComponent('osm-tiles', {
   schema: {
@@ -79,9 +48,9 @@ AFRAME.registerComponent('osm-tiles', {
     // console.log(this.data);
     this.tilesLoaded = new Set(); // contains each x,y tile id that has been added
 
-    this.tileSize_m = lat2tileWidth_m(this.data.lat, this.data.zoom);
+    this.tileSize_m = this.lat2tileWidth_m(this.data.lat, this.data.zoom);
 
-    this.tileBase = latlon2fractionalTileId(this.data.lat, this.data.lon, this.data.zoom);
+    this.tileBase = this.latlon2fractionalTileId(this.data.lat, this.data.lon);
     this.loadTilesAround(new THREE.Vector3(0, 0, 0));
     
     // if trackId attribute is given, keep track of the element's position
@@ -99,6 +68,38 @@ AFRAME.registerComponent('osm-tiles', {
     }
   },
 
+  // Convert latitude to width in meters for given zoom level
+  lat2tileWidth_m: function(lat, zoom) {
+    const EQUATOR_M = 40075017; // equatorial circumference in meters
+    let nTiles = 2 ** zoom;
+    let circumference_m = EQUATOR_M * Math.cos(lat * Math.PI / 180);
+    return circumference_m / nTiles;
+  },
+
+  // Convert geocoordinates to tile coordinates for given zoom level
+  // Returns floating point values where
+  // * the integer part is the tile id
+  // * the fractional part is the position within the tile
+  latlon2fractionalTileId: function(lat, lon) {
+    let nTiles = 2 ** this.data.zoom;
+    let latRad = lat * Math.PI / 180;
+    let x = nTiles * (lon + 180) / 360;
+    let y = nTiles * (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2;
+    return [x, y];
+  },
+
+  // Create an Aframe plane with a given tile's image url, and size and position in meters
+  // The plane position sets x,y although Aframe uses x,z for 3D, so needs to be rotated later
+  createTile: function(x_m, y_m, url) {
+    // console.log(x_m, y_m, url, this.tileSize_m);  
+    let tile = document.createElement('a-plane');
+    tile.setAttribute('src', url);
+    tile.setAttribute('width', this.tileSize_m);
+    tile.setAttribute('height', this.tileSize_m);
+    tile.setAttribute('position', {x: x_m, y: y_m, z: 0});
+    return tile;
+  },
+
   // Create an OpenStreetMap tile for given x,y tile coordinates and zoom level
   // Example url for Berlin center at zoom level 14: https://tile.openstreetmap.org/14/8802/5373.png
   // tileSize_m sets the width and length of the tile in meters
@@ -109,8 +110,8 @@ AFRAME.registerComponent('osm-tiles', {
     let url = this.data.url + `${this.data.zoom}/${x}/${y}.png`;
     let x_m = (x - this.tileBase[0] + 0.5) * this.tileSize_m;
     let y_m = (y - this.tileBase[1] + 0.5) * this.tileSize_m;
-    let tile = createTile(x_m, -y_m, url, this.tileSize_m, this.tileSize_m);
-    // let tile = createTile(x_m / this.tileSize_m, -y_m / this.tileSize_m, url, 1, 1);
+    let tile = this.createTile(x_m, -y_m, url);
+    // let tile = this.createTile(x_m / this.tileSize_m, -y_m / this.tileSize_m, url, 1, 1);
     return tile;
   },
 
