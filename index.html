@@ -24,7 +24,7 @@
     <!-- The rig contains the camera and can move around, we start a bit back from centre -->
     <a-entity id="rig" position="0 0 2" rotation="0 0 0">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
-      <a-entity id="head" camera look-controls wasd-controls birdman log2hud="target: chud" position="0 1.6 0">
+      <a-entity id="head" camera look-controls wasd-controls="fly: true" birdman log2hud="target: chud" position="0 1.6 0">
         <!-- "Head up displays" to show live data for camera and left/right hand controller -->
         <a-entity id="lhud" position="0.5 0 -2" scale="2 2 1"></a-entity>
         <a-entity id="chud" position="1 0.5 -2" scale="2 2 1"></a-entity>
