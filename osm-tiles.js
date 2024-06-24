@@ -133,7 +133,7 @@ AFRAME.registerComponent('osm-tiles', {
 
     for (let y = startY; y < endY; y++) {
       for (let x = startX; x < endX; x++) {
-        let xy = y << this.data.zoom + x;
+        let xy = (y << this.data.zoom) + x;
         if (!this.tilesLoaded.has(xy)) {
           let tile = this.loadTile(x, y);
           this.el.appendChild(tile);

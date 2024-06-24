@@ -273,7 +273,7 @@ AFRAME.registerComponent('osm-geojson', {
     let bboxSWNE = []; // bounding box in [south,west,north,east] degrees
     for (let y = startY; y < endY; y++) {
       for (let x = startX; x < endX; x++) {
-        let xy = y << this.data.zoom + x;
+        let xy = (y << this.data.zoom) + x;
         if (!this.tilesLoaded.has(xy)) {
           let bbox = this.tile2bbox(x, y, this.data.zoom);
           if (bboxSWNE.length == 0) {
