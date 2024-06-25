@@ -3,8 +3,10 @@
 // lat, lon: start position of the map at Aframe's origin (0,0)
 // src: optional geojson asset to load on init (loads all buildings inside regardless of lat/lon/radius_m)
 // radius_m: radius in meters around the start position to load buildings from Overpass API
+//   default is 0 to disable loading from Overpass API, otherwise 500 is a good value
 // zoom: zoom level, to load all buildings of a tile at once (doesn't influence map details)
-// trackId: optional id of a scene element for dynamic loading (usually the rig / user position)
+//   smaller values load more buildings at once but may slow down rendering, higher values cause more requests
+ // trackId: optional id of a scene element for dynamic loading (usually the rig / user position)
 //
 // The component supports different use cases:
 // * show buildings from a geojson file: set src to the asset url
@@ -21,7 +23,7 @@ AFRAME.registerComponent('osm-geojson', {
     lat: {type: 'number'},
     lon: {type: 'number'},
     src: {type: 'asset'},
-    radius_m: {type: 'number', default: 500},
+    radius_m: {type: 'number', default: 0},
     zoom: {type: 'number', default: 17},
     trackId: {type: 'string'}
   },
@@ -267,6 +269,9 @@ AFRAME.registerComponent('osm-geojson', {
   // otherwise load the missing ones as a single bounding box
   // pos is the position in meters on the Aframe plane, we ignore the height
   loadTilesAround: function(pos) {
+    if (this.data.radius_m <= 0) {
+      return;
+    }
     let tileX = this.tileBase[0] + pos.x / this.tileSize_m;
     let tileY = this.tileBase[1] + pos.z / this.tileSize_m;
 
