@@ -30,6 +30,7 @@ AFRAME.registerComponent('osm-geojson', {
     this.EQUATOR_M = 40075017; // equatorial circumference in meters
     this.POLES_M   = 40007863; // polar circumference in meters
     this.LEVEL_HEIGHT_M = 3; // default height in meters for a single building level
+    this.DEFAULT_BUILDING_HEIGHT_M = 6; // default height in meters for buildings without height
     this.BUILDING_TO_METER = {
       'church': 20,
       'water_tower': 20
@@ -205,8 +206,7 @@ AFRAME.registerComponent('osm-geojson', {
     if (properties.man_made in this.BUILDING_TO_METER) {
       return this.BUILDING_TO_METER[properties.man_made];
     }
-    // default to single level height
-    return this.LEVEL_HEIGHT_M;
+    return this.DEFAULT_BUILDING_HEIGHT_M;
   },
 
   // Extract or estimate building colour
