@@ -77,13 +77,7 @@ AFRAME.registerComponent('osm-geojson', {
       this.data.lat = center[0];
       this.data.lon = center[1];
     }
-    for (let feature of json.features) {
-      if ('building' in feature.properties && !this.featuresLoaded[feature.id]) {
-        this.featuresLoaded[feature.id] = true;
-        let building = this.feature2building(feature, this.data.lat, this.data.lon);
-        this.el.appendChild(building);
-      }
-    }
+    this.addBuildings(json);
   },
 
   // Convert latitude to width in meters for given zoom level
@@ -252,6 +246,23 @@ AFRAME.registerComponent('osm-geojson', {
     return [south, west, north, east];
   },
 
+  // Iterate over features in geojson and add buildings to the scene
+  addBuildings: function(geojson) {
+    let count = 0;
+    let ignored = 0;
+    for (let feature of geojson.features) {
+      if ('building' in feature.properties && !this.featuresLoaded[feature.id]) {
+        this.featuresLoaded[feature.id] = true;
+        let building = this.feature2building(feature, this.data.lat, this.data.lon);
+        this.el.appendChild(building);
+        count += 1;
+      } else {
+        ignored += 1;
+      }
+    }
+    console.log("Loaded", count, "buildings, ignored ", ignored);
+  },
+
   // Check if all tiles within the default radius around the given position are fully loaded
   // otherwise load the missing ones as a single bounding box
   // pos is the position in meters on the Aframe plane, we ignore the height
@@ -293,19 +304,7 @@ AFRAME.registerComponent('osm-geojson', {
       console.log("Bounding box for missing tiles (SWNE): ", bboxSWNE);
       this.loadOSMbuildingsBbox(bboxSWNE).then((json) => {
         let geojson = osmtogeojson(json);
-        let count = 0;
-        let ignored = 0;
-        for (let feature of geojson.features) {
-          if ('building' in feature.properties && !this.featuresLoaded[feature.id]) {
-            this.featuresLoaded[feature.id] = true;
-            let building = this.feature2building(feature, this.data.lat, this.data.lon);
-            this.el.appendChild(building);
-            count += 1;
-          } else {
-            ignored += 1;
-          }
-        }
-        console.log("Loaded", count, "buildings, ignored ", ignored);
+        this.addBuildings(geojson);
       });
     }
   }
