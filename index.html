@@ -11,10 +11,56 @@
   <script src="log2hud.js"></script>
   <script src="birdman.js"></script>
   <script src="wing.js"></script>
+  <style>
+    body { font: 0.9em "Verdana", sans-serif; }
+    .ontop { z-index: 10; position: relative; }
+    #info { padding: 4px; position: relative; max-width: 100%; max-height: 95%; overflow: auto; }
+    #legal { font-size: 0.75em; }
+    #location input, #location button { font-size: inherit; }
+    @media (width <= 800px) {
+      body { font-size: 0.8em; }
+      h1 { font-size: 1.2em; }
+      #legal { font-size: 0.8em; }
+    }
+  </style>
 </head>
 <body>
+  <div id="info" class="ontop">
+    <div id="description">
+      <h1>osm4vr</h1>
+      <p>
+        Fly through the world in Virtual Reality, in your browser.
+        The map, buildings and potentially other features come from OpenStreetMap.
+      </p>
+      <p>
+        In VR, you can use hand controllers to fly around by extending your arms and flapping.
+        The experience also works in non-VR mode, where you can use arrow or W/A/S/D keys to move, and touch on mobile.
+      </p>
+      <p>Search for a place or enter the latitude / longitude directly and press Go, or simply press Menu to start at the default position.</p>
+    </div>
+    <div id="location">
+      <input id="searchInput" type="search" placeholder="Berlin" />
+      <button id="searchButton" onclick="searchLocation(); return false;">Search</button>
+      <br />
+      <input type="number" id="latitude" placeholder="latitude" value="52.5137" size="8" step="0.00001" min="-90" max="90" />
+      <input type="number" id="longitude" placeholder="longitude" value="13.4177" size="8" step="0.00001" min="-180" max="180" />
+      <button id="goButton" onclick="loadLocation(); return false;">Go</button>
+    </div>
+    <div id="legal">
+      <p>
+        Source code (MIT license): <a href="https://github.com/ctrlw/osm4vr">github.com/ctrlw/osm4vr</a>
+        <br />
+        Map data and tiles &copy;
+        <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>
+        contributors, under <a href="https://www.openstreetmap.org/copyright"
+        target="_blank">ODbL</a> license.
+      </p>
+    </div>
+  </div>
+
   <!-- HTML button to control flying in non-VR mode -->
-  <button id="fbtn" style="z-index: 999; position: relative">Flap</button>
+  <button id="flapButton" class="ontop">Flap</button>
+  <button id="menuButton" class="ontop" onclick="toggleMenu(); return false;">Menu</button>
 
   <a-scene>
     <a-assets>
@@ -22,8 +68,8 @@
       <a-asset-item id="json-world" src="kappel.geojson" />
     </a-assets>
 
-    <!-- The rig contains the camera and can move around, we start a bit back from centre -->
-    <a-entity id="rig" position="0 0 2" rotation="0 0 0">
+    <!-- The rig contains the camera and can move around -->
+    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
       <a-entity id="head" camera look-controls wasd-controls="fly: true" birdman log2hud="target: chud" position="0 1.6 0">
         <!-- "Head up displays" to show live data for camera and left/right hand controller -->
@@ -47,11 +93,48 @@
     const head = document.getElementById('head');
     const VAXIS = new THREE.Vector3(0, 1, 0);
     
-    document.getElementById("fbtn").addEventListener('click', e => {
+    document.getElementById("flapButton").addEventListener('click', e => {
       rig.object3D.position.y += 5;
       head.components.birdman.dir.z = -0.1;
       head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
     });
+    
+  function toggleMenu() {
+    let style = document.getElementById('info').style;
+    style.display = style.display == 'none' ? 'block' : 'none';
+  }
+
+  // switch to the location in the coordinate input fields, hide the forms
+  function loadLocation() {
+    const lat = document.getElementById('latitude').value;
+    const lon = document.getElementById('longitude').value;
+    console.log('loadLocation', lat, lon);
+
+    // set user position to origin
+    document.getElementById('rig').object3D.position.set(0, 0, 0);
+
+    let tiles = document.querySelector('a-entity[osm-tiles]');
+    tiles.setAttribute('osm-tiles', `lat: ${lat}; lon: ${lon}`);
+
+    let buildings = document.querySelector('a-entity[osm-geojson]');
+    buildings.setAttribute('osm-geojson', `lat: ${lat}; lon: ${lon}`);
+
+    // hide the info element
+    document.getElementById('info').style.display = 'none';
+  }
+
+  // query OSM's nominatim API with the search query input and update the coordinate input fields
+  function searchLocation() {
+    const search = document.getElementById('searchInput').value;
+    fetch(`https://nominatim.openstreetmap.org/search?q=${search}&format=json`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.length > 0) {
+          document.getElementById('latitude').value = parseFloat(data[0].lat).toFixed(5);
+          document.getElementById('longitude').value = parseFloat(data[0].lon).toFixed(5);
+        }
+      });
+  }
 </script>
 </body>
 </html>

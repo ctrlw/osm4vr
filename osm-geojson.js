@@ -40,22 +40,10 @@ AFRAME.registerComponent('osm-geojson', {
 
     this.tilesLoaded = new Set(); // contains each x,y tile id that has been loaded
     this.featuresLoaded = {}; // contains each feature id that has been added
-    this.tileSize_m = this.lat2tileWidth_m(this.data.lat, this.data.zoom);
-    this.tileBase = this.latlon2fractionalTileId(this.data.lat, this.data.lon);
 
     // for loading a geojson file from the src asset
     this.loader = new THREE.FileLoader();
     this.onSrcLoaded = this.onSrcLoaded.bind(this);
-
-    this.loadTilesAround(new THREE.Vector3(0, 0, 0));
-
-    // if trackId attribute is given, keep track of the element's position
-    if (this.data.trackId) {
-      let element = document.getElementById(this.data.trackId);
-      if (element && element.object3D && element.object3D.position) {
-        this.trackPosition = element.object3D.position;
-      }
-    }
   },
 
   tick: function () {
@@ -65,11 +53,29 @@ AFRAME.registerComponent('osm-geojson', {
   },
 
   update: function (oldData) {
-    if (!this.data.src) {
-      return;
-    }
-    if (this.data.src !== oldData.src) {
-      this.loader.load(this.data.src, this.onSrcLoaded);
+    if (this.data !== oldData) {
+      this.trackPosition = null;
+      // reset the layer
+      this.el.innerHTML = '';
+      this.tilesLoaded.clear();
+      this.featuresLoaded = {};
+
+      this.tileSize_m = this.lat2tileWidth_m(this.data.lat, this.data.zoom);
+      this.tileBase = this.latlon2fractionalTileId(this.data.lat, this.data.lon);
+
+      if (this.data.src) {
+        this.loader.load(this.data.src, this.onSrcLoaded);
+      }
+
+      this.loadTilesAround(new THREE.Vector3(0, 0, 0));
+
+      // if trackId attribute is given, keep track of the element's position
+      if (this.data.trackId) {
+        let element = document.getElementById(this.data.trackId);
+        if (element && element.object3D && element.object3D.position) {
+          this.trackPosition = element.object3D.position;
+        }
+      }
     }
   },
 

@@ -39,7 +39,7 @@ AFRAME.registerComponent('osm-tiles', {
     lat: {type: 'number'},
     lon: {type: 'number'},
     radius_m: {type: 'number', default: 500},
-    zoom: {type: 'number', default: 16},
+    zoom: {type: 'number', default: 17},
     trackId: {type: 'string'}, // component's id whose position we track for dynamic tile loading
     url: {type: 'string', default: 'https://tile.openstreetmap.org/'} // tileServer base url
   },
@@ -47,21 +47,30 @@ AFRAME.registerComponent('osm-tiles', {
   init: function () {
     // console.log(this.data);
     this.tilesLoaded = new Set(); // contains each x,y tile id that has been added
+  },
+  
+  // recreate the tiles layer
+  update: function (oldData) {
+    if (this.data !== oldData) {
+      this.trackPosition = null;
+      // reset the layer
+      this.el.innerHTML = '';
+      this.tilesLoaded.clear();
 
-    this.tileSize_m = this.lat2tileWidth_m(this.data.lat, this.data.zoom);
+      this.tileSize_m = this.lat2tileWidth_m(this.data.lat, this.data.zoom);
+      this.tileBase = this.latlon2fractionalTileId(this.data.lat, this.data.lon);
+      this.loadTilesAround(new THREE.Vector3(0, 0, 0));
 
-    this.tileBase = this.latlon2fractionalTileId(this.data.lat, this.data.lon);
-    this.loadTilesAround(new THREE.Vector3(0, 0, 0));
-    
-    // if trackId attribute is given, keep track of the element's position
-    if (this.data.trackId) {
-      let element = document.getElementById(this.data.trackId);
-      if (element && element.object3D && element.object3D.position) {
-        this.trackPosition = element.object3D.position;
+      // if trackId attribute is given, keep track of the element's position
+      if (this.data.trackId) {
+        let element = document.getElementById(this.data.trackId);
+        if (element && element.object3D && element.object3D.position) {
+          this.trackPosition = element.object3D.position;
+        }
       }
     }
   },
-  
+
   tick: function () {
     if (this.trackPosition) {
       this.loadTilesAround(this.trackPosition);
