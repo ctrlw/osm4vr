@@ -83,8 +83,8 @@
       <a-entity id="rightHand" laser-controls="hand: right" wing log2hud="target: rhud"></a-entity>
     </a-entity>
 
-    <a-entity osm-tiles="lat: 49.16; lon: 10.163; trackId: rig" rotation="-90 0 0" shadow="receive: true"></a-entity>
-    <a-entity osm-geojson="lat: 49.16; lon: 10.163; radius_m: 500; src: #json-world; trackId: rig"></a-entity>
+    <a-entity osm-tiles="lat: 49.16; lon: 10.163; trackId: head" rotation="-90 0 0" shadow="receive: true"></a-entity>
+    <a-entity osm-geojson="lat: 49.16; lon: 10.163; radius_m: 500; src: #json-world; trackId: head"></a-entity>
   </a-scene>
 
   <!-- Some javascript to interact with the scene and its contents -->
@@ -112,6 +112,7 @@
 
     // set user position to origin
     document.getElementById('rig').object3D.position.set(0, 0, 0);
+    document.getElementById('head').object3D.position.set(0, 0, 0);
 
     let tiles = document.querySelector('a-entity[osm-tiles]');
     tiles.setAttribute('osm-tiles', `lat: ${lat}; lon: ${lon}`);

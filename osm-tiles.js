@@ -52,6 +52,7 @@ AFRAME.registerComponent('osm-tiles', {
   // recreate the tiles layer
   update: function (oldData) {
     if (this.data !== oldData) {
+      this.trackElement = null;
       this.trackPosition = null;
       // reset the layer
       this.el.innerHTML = '';
@@ -64,15 +65,18 @@ AFRAME.registerComponent('osm-tiles', {
       // if trackId attribute is given, keep track of the element's position
       if (this.data.trackId) {
         let element = document.getElementById(this.data.trackId);
-        if (element && element.object3D && element.object3D.position) {
-          this.trackPosition = element.object3D.position;
+        if (element && element.object3D) {
+          this.trackElement = element;
+          this.trackPosition = new THREE.Vector3();
         }
       }
     }
   },
 
   tick: function () {
-    if (this.trackPosition) {
+    if (this.trackElement) {
+      // use world position to support movement of both head and rig
+      this.trackElement.object3D.getWorldPosition(this.trackPosition);
       this.loadTilesAround(this.trackPosition);
     }
   },
