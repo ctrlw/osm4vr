@@ -10,8 +10,9 @@ AFRAME.registerComponent('log2hud', {
   },
   
   tick: function () {
-    var rotation = this.el.getAttribute('rotation');
-    var pos = this.el.getAttribute('position');
+    // var rotation = this.el.getAttribute('rotation'); // angle in degrees
+    var rotation = this.el.object3D.rotation; // angle in radians
+    var pos = this.el.object3D.position; // (relative) position in meters
     var s = "pos: " + this.toString(pos) + "\nrot: " + this.toString(rotation);
     // console.log(s);
     this.hud.setAttribute('text', 'value: ' + s);
