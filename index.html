@@ -8,7 +8,7 @@
   <script src="https://unpkg.com/osmtogeojson/osmtogeojson.js"></script>
   <script src="osm-geojson.js"></script>
   <script src="osm-tiles.js"></script>
-  <script src="log2hud.js"></script>
+  <!-- <script src="log2hud.js"></script> -->
   <script src="birdman.js"></script>
   <script src="wing.js"></script>
   <style>
@@ -64,8 +64,6 @@
 
   <a-scene>
     <a-assets>
-      <img id="skyTexture" crossorigin="anonymous" src="https://cdn.aframe.io/a-painter/images/sky.jpg">
-      <a-asset-item id="json-world" src="kappel.geojson" />
     </a-assets>
 
     <!-- The rig contains the camera and can move around -->
@@ -83,8 +81,8 @@
       <a-entity id="rightHand" laser-controls="hand: right" wing log2hud="target: rhud"></a-entity>
     </a-entity>
 
-    <a-entity osm-tiles="lat: 49.16; lon: 10.163; trackId: head" rotation="-90 0 0" shadow="receive: true"></a-entity>
-    <a-entity osm-geojson="lat: 49.16; lon: 10.163; radius_m: 500; src: #json-world; trackId: head"></a-entity>
+    <a-entity osm-tiles="lat: 52.52; lon: 13.41; trackId: head" rotation="-90 0 0" shadow="receive: true"></a-entity>
+    <a-entity osm-geojson="lat: 52.52; lon: 13.41; radius_m: 500; trackId: head"></a-entity>
   </a-scene>
 
   <!-- Some javascript to interact with the scene and its contents -->
