@@ -27,7 +27,7 @@ It's recommended to add the necessary files to your project rather than loading 
 </head>
 <body>
   <a-scene>
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
+    <a-entity id="rig">
       <a-camera id="head" look-controls wasd-controls="fly: true" position="0 1.6 0"></a-camera>
       <a-entity id="leftHand" laser-controls="hand: left"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right"></a-entity>
@@ -68,12 +68,13 @@ then add the resulting geojson file as asset and set a lat/lon within the extrac
     <a-assets>
       <a-asset-item id="json-world" src="YOUR_FILE.geojson" />
     </a-assets>
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
+    <a-entity id="rig">
       <a-camera id="head" look-controls wasd-controls="fly: true" position="0 1.6 0"></a-camera>
       <a-entity id="leftHand" laser-controls="hand: left"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right"></a-entity>
     </a-entity>
     <a-entity osm-geojson="lat: 52.52; lon: 13.41; src: #json-world"></a-entity>
+    <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0"></a-plane>
   </a-scene>
 </body>
 </html>
@@ -92,12 +93,13 @@ This depends on the osmtogeojson library.
 </head>
 <body>
   <a-scene>
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
+    <a-entity id="rig">
       <a-camera id="head" look-controls wasd-controls="fly: true" position="0 1.6 0"></a-camera>
       <a-entity id="leftHand" laser-controls="hand: left"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right"></a-entity>
     </a-entity>
     <a-entity osm-geojson="lat: 52.52; lon: 13.41; radius_m: 500; trackId: head"></a-entity>
+    <a-plane color="#33aa66" height="1000" width="1000" rotation="-90 0 0"></a-plane>
   </a-scene>
 </body>
 </html>
@@ -119,7 +121,7 @@ This depends on the osmtogeojson library.
     <a-assets>
       <a-asset-item id="json-world" src="YOUR_FILE.geojson" />
     </a-assets>
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
+    <a-entity id="rig">
       <a-camera id="head" look-controls wasd-controls="fly: true" position="0 1.6 0"></a-camera>
       <a-entity id="leftHand" laser-controls="hand: left"></a-entity>
       <a-entity id="rightHand" laser-controls="hand: right"></a-entity>
