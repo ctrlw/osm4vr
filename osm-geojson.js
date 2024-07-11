@@ -31,6 +31,7 @@ AFRAME.registerComponent('osm-geojson', {
   init: function () {
     this.EQUATOR_M = 40075017; // equatorial circumference in meters
     this.POLES_M   = 40007863; // polar circumference in meters
+    this.FEET_TO_METER = 0.3048;
     this.LEVEL_HEIGHT_M = 3; // default height in meters for a single building level
     this.DEFAULT_BUILDING_HEIGHT_M = 6; // default height in meters for buildings without height
     // some default values for buildings defined at https://wiki.openstreetmap.org/wiki/Key:building
@@ -155,15 +156,20 @@ AFRAME.registerComponent('osm-geojson', {
     return [lat, lon];
   },
 
-  // load OSM building data for the bounding box
+  // Load OSM building data for the bounding box
   // bboxArray is an array with [south,west,north,east] in degrees
   loadOSMbuildingsBbox: async function(bboxArray) {
     let bbox = bboxArray.join(',');
+    // overpass query to get all buildings and building parts
+    // adding skel to the last line may reduce the amount of data: out;>;out skel qt;
     let overpassQuery = `[out:json][timeout:30];(
         way["building"](${ bbox });
         relation["building"]["type"="multipolygon"](${ bbox });
+        way["building:part"](${ bbox });
+        relation["building:part"]["type"="multipolygon"](${ bbox });
         );out;>;out qt;
         `;
+
     let response = await fetch(
         "https://overpass-api.de/api/interpreter",
         {
@@ -192,22 +198,34 @@ AFRAME.registerComponent('osm-geojson', {
   // Create the Aframe geometry by extruding building footprints to given height
   // xyCoords is an array of [x,y] positions in meters, e.g. [[0, 0], [1, 0], [1, 1], [0, 1]]
   // xyHoles is an optional array of paths to describe holes in the building footprint
-  createGeometry: function(xyCoords, xyHoles, height) {
+  // height is the building height in meters from the base to the top, null to use a default
+  // if minHeight is given, the geometry is moved up to reach from minHeight to the top
+  createGeometry: function(xyCoords, xyHoles, height, minHeight) {
     let shape = new THREE.Shape(xyCoords.map(xy => new THREE.Vector2(xy[0], xy[1])));
+    if (height === null) {
+      // set the height based on the perimeter of the building if missing other info
+      let perimeter_m = shape.getLength();
+      height = Math.min(this.DEFAULT_BUILDING_HEIGHT_M, perimeter_m / 5);  
+    }
     for (let hole of xyHoles) {
       shape.holes.push(new THREE.Path(hole.map(xy => new THREE.Vector2(xy[0], xy[1]))));
     }
+    height -= minHeight;
     let geometry = new THREE.ExtrudeGeometry(shape, {depth: height, bevelEnabled: false});
 
     // ExtrudeGeometry expects x and y as base shape and extrudes z, rotate to match
     geometry.rotateX(-Math.PI / 2);
+    if (minHeight) {
+      geometry.translate(0, minHeight, 0);
+    }
     return geometry;
   },
 
   // Generate a building from outline and height, both in meters
-  createBuilding: function(xyCoords, xyHoles, height) {
+  // if minHeight is given, the building is extruded from that height upwards
+  createBuilding: function(xyCoords, xyHoles, height, minHeight = 0) {
     // Create a mesh with the geometry and a material
-    let geometry = this.createGeometry(xyCoords, xyHoles, height);
+    let geometry = this.createGeometry(xyCoords, xyHoles, height, minHeight);
     let material = new THREE.MeshBasicMaterial({color: 0xaabbcc});
     let mesh = new THREE.Mesh(geometry, material);
     let entity = document.createElement('a-entity');
@@ -215,20 +233,24 @@ AFRAME.registerComponent('osm-geojson', {
     return entity;
   },
 
+  // Convert a height string to meters, handling different units/formats
+  height2meters: function(height) {
+    if (height.indexOf("'") > 0) {
+      // height given in feet and inches, convert to meter and ignore inches
+      return parseFloat(height) * this.FEET_TO_METER;
+    }
+    // default unit is meters, parseFloat ignores any potentially appended " m"
+    return parseFloat(height);
+  },
+
   // Extract or estimate the height of a building
+  // return null to set it later depending on the perimeter
   feature2height: function(feature) {
     // buildings can have a height defined with optional unit (default is meter)
     // https://wiki.openstreetmap.org/wiki/Key:height
     let properties = feature.properties;
     if ('height' in properties) {
-      let height = properties.height;
-      if (height.indexOf("'") > 0) {
-        // height given in feet and inches, convert to meter and ignore inches
-        const FEET_TO_METER = 0.3048;
-        return parseFloat(height) * FEET_TO_METER;
-      }
-      // default unit is meters, parseFloat ignores any potentially appended " m"
-      return parseFloat(height);
+      return this.height2meters(properties.height);
     }
     if ("building:levels" in properties) {
       return parseInt(properties["building:levels"]) * this.LEVEL_HEIGHT_M;
@@ -239,7 +261,21 @@ AFRAME.registerComponent('osm-geojson', {
     if (properties.man_made in this.BUILDING_TO_METER) {
       return this.BUILDING_TO_METER[properties.man_made];
     }
-    return this.DEFAULT_BUILDING_HEIGHT_M;
+    return null;
+  },
+
+  // Building parts can define a minimum height, so they start at a higher position, e.g. a roof
+  // Alternatively, building:min_level can be used
+  // https://wiki.openstreetmap.org/wiki/Key:min_height
+  feature2minHeight: function(feature) {
+    let properties = feature.properties;
+    if ('min_height' in properties) {
+      return this.height2meters(properties.min_height);
+    }
+    if ('building:min_level' in properties) {
+      return parseInt(properties['building:min_level']) * this.LEVEL_HEIGHT_M;
+    }
+    return 0;
   },
 
   // Extract or estimate building colour
@@ -261,7 +297,11 @@ AFRAME.registerComponent('osm-geojson', {
       xyHoles.push(this.geojsonCoords2plane(paths[i], baseLat, baseLon));
     }
     let height_m = this.feature2height(feature);
-    let building = this.createBuilding(xyOutline, xyHoles, height_m);
+    if (height_m === 0) {
+      return null; // skip building outlines that are covered by building parts
+    }
+    let minHeight_m = this.feature2minHeight(feature);
+    let building = this.createBuilding(xyOutline, xyHoles, height_m, minHeight_m);
 
     let color = this.feature2color(feature);
     let material = `color: ${color}; opacity: 1.0;`;
@@ -283,17 +323,26 @@ AFRAME.registerComponent('osm-geojson', {
   addBuildings: function(geojson) {
     let count = 0;
     let ignored = 0;
+    let skipped = 0;
     for (let feature of geojson.features) {
-      if ('building' in feature.properties && !this.featuresLoaded[feature.id]) {
+      let properties = feature.properties;
+      if (('building' in properties || 'building:part' in properties) && !this.featuresLoaded[feature.id]) {
         this.featuresLoaded[feature.id] = true;
         let building = this.feature2building(feature, this.data.lat, this.data.lon);
-        this.el.appendChild(building);
-        count += 1;
+        if (building) {
+          this.el.appendChild(building);
+          count += 1;
+        } else {
+          skipped += 1;
+        }
       } else {
+        if (!this.featuresLoaded[feature.id] && feature.geometry.type != 'Point') {
+          // console.log(feature);
+        }
         ignored += 1;
       }
     }
-    console.log("Loaded", count, "buildings, ignored ", ignored);
+    console.log("Loaded", count, "buildings, ignored", ignored, ", skipped", skipped);
   },
 
   // Check if all tiles within the default radius around the given position are fully loaded
