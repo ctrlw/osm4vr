@@ -324,6 +324,10 @@ AFRAME.registerComponent('osm-geojson', {
     let count = 0;
     let ignored = 0;
     let skipped = 0;
+    let buildings = new Set();
+    let parts = [];
+
+    // iterate over all features and add buildings to the scene
     for (let feature of geojson.features) {
       let properties = feature.properties;
       if (('building' in properties || 'building:part' in properties) && !this.featuresLoaded[feature.id]) {
@@ -332,6 +336,11 @@ AFRAME.registerComponent('osm-geojson', {
         if (building) {
           this.el.appendChild(building);
           count += 1;
+          if ('building' in properties) {
+            buildings.add(building);
+          } else {
+            parts.push(building);
+          }
         } else {
           skipped += 1;
         }
@@ -340,6 +349,31 @@ AFRAME.registerComponent('osm-geojson', {
           // console.log(feature);
         }
         ignored += 1;
+      }
+    }
+
+    // remove buildings that are covered by building parts
+    // Unfortunately, there's no enforced relation:
+    // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
+    // TODO: optimise logic and performance if needed
+    let outer = new THREE.Box3();
+    let inner = new THREE.Box3();
+    for (let part of parts) {
+      let uselessBuildings = new Set();
+      inner.setFromObject(part.object3D);
+      for (let building of buildings) {
+        if (part.object3D.position.distanceTo(building.object3D.position) < 1) {
+          outer.setFromObject(building.object3D);
+          if (outer.containsBox(inner)) {
+            uselessBuildings.add(building);
+          }
+        }
+      }
+      for (let building of uselessBuildings) {
+        this.el.removeChild(building);
+        buildings.delete(building);
+        count -= 1;
+        skipped += 1;
       }
     }
     console.log("Loaded", count, "buildings, ignored", ignored, ", skipped", skipped);
