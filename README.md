@@ -39,19 +39,14 @@ It's recommended to add the necessary files to your project rather than loading 
 ```
 
 ### Display a geojson file without dynamic loading from OpenStreetMap
-To create a geojson file from OpenStreetMap, try the wizard at https://overpass-turbo.eu/. Useful queries are
-```
-[out:json][timeout:30];
-(way["building"]({{bbox}});
- relation["building"]["type"="multipolygon"]({{bbox}}););
-out geom;
-```
-or:
+To create a geojson file from OpenStreetMap, try the wizard at https://overpass-turbo.eu/. We use
 ```
 [out:json][timeout:30];(
-way["building"]({{bbox}});
-rel["building"]({{bbox}});
-);out body;>;out skel qt;
+  way["building"]({{bbox}});
+  relation["building"]["type"="multipolygon"]({{bbox}});
+  way["building:part"]({{bbox}});
+  relation["building:part"]["type"="multipolygon"]({{bbox}});
+);out;>;out qt;
 ```
 
 then add the resulting geojson file as asset and set a lat/lon within the extracted area
