@@ -33,9 +33,30 @@ AFRAME.registerComponent('osm-geojson', {
     this.POLES_M   = 40007863; // polar circumference in meters
     this.LEVEL_HEIGHT_M = 3; // default height in meters for a single building level
     this.DEFAULT_BUILDING_HEIGHT_M = 6; // default height in meters for buildings without height
+    // some default values for buildings defined at https://wiki.openstreetmap.org/wiki/Key:building
     this.BUILDING_TO_METER = {
       'church': 20,
-      'water_tower': 20
+      'water_tower': 20,
+      'bungalow': this.LEVEL_HEIGHT_M,
+      'cabin': this.LEVEL_HEIGHT_M,
+      'ger': this.LEVEL_HEIGHT_M,
+      'houseboat': this.LEVEL_HEIGHT_M,
+      'static_caravan': this.LEVEL_HEIGHT_M,
+      'kiosk': this.LEVEL_HEIGHT_M,
+      'chapel': this.LEVEL_HEIGHT_M,
+      'shrine': this.LEVEL_HEIGHT_M,
+      'bakehouse': this.LEVEL_HEIGHT_M,
+      'toilets': this.LEVEL_HEIGHT_M,
+      'stable': this.LEVEL_HEIGHT_M,
+      'boathouse': this.LEVEL_HEIGHT_M,
+      'hut': this.LEVEL_HEIGHT_M,
+      'shed': this.LEVEL_HEIGHT_M,
+      'carport': this.LEVEL_HEIGHT_M,
+      'garage': this.LEVEL_HEIGHT_M,
+      'garages': this.LEVEL_HEIGHT_M,
+      'beach_hut': this.LEVEL_HEIGHT_M,
+      'container': this.LEVEL_HEIGHT_M,
+      'guardhouse': this.LEVEL_HEIGHT_M
     }
 
     this.tilesLoaded = new Set(); // contains each x,y tile id that has been loaded
