@@ -6,8 +6,15 @@ The code in the repository can also be integrated into other projects to add a m
 Open https://ctrlw.github.io/osm4vr/ in your VR device's browser and move around. With hand controllers (e.g. on the Quest) you can extend your arms and move them up and down to fly.
 Moving around also works in a regular 2d web browser (even on mobile), but flapping your wings is more fun.
 
+## Features
+* Supports both static geojson assets (e.g. downloads from OSM's Overpass API) and loading data dynamically while moving around
+* Components are easy to configure and can be used independently, e.g. to embed just a map or just buildings (see below)
+* A search box allows to find a place by name (using OSM's nominatim service)
+* Supports OSM simple 3d buildings (mostly), so e.g. the Berlin TV tower is more than just a column
+* You can use hand controllers to flap your wings in VR
+
 ## Limitations
-* Buildings are not actual 3d models, just the building footprint from OSM with the height taken from building:height if given, otherwise building:levels multiplied by 3 or a default value. OSM has a list of other 3d viewers at https://wiki.openstreetmap.org/wiki/3D
+* Buildings are not full 3d models. Some use [OSM's Simple 3d buildings spec](https://wiki.openstreetmap.org/wiki/Simple_3D_buildings) but most are just the building footprint with the height taken from `building:height` if given, otherwise `building:levels` multiplied by 3 or a default value. OSM has a list of other 3d viewers at https://wiki.openstreetmap.org/wiki/3D
 * The OpenStreetMap data comes from their public servers, so be gentle or setup your own servers
 * There's currently no dynamic unloading of data implemented, so loading more buildings while moving around may lead to performance issues or crashes
 * Controls are very rudimentary (flight is a crude approximation, other controls are partly usable)
@@ -75,7 +82,7 @@ then add the resulting geojson file as asset and set a lat/lon within the extrac
 </html>
 ```
 
-### Include 3d buildings from OpenStreetMap
+### Dynamically load 3d buildings from OpenStreetMap
 This depends on the osmtogeojson library.
 ```javascript
 <!doctype html>
@@ -129,7 +136,8 @@ This depends on the osmtogeojson library.
 ```
 
 ## Credits
-* This project is heavily inspired by https://github.com/KaiRo-at/vrmap. While VRmap loads only a limited area, OSM4VR supports loading tiles and buildings dynamically while moving around, as well as loading a geojson file. The components are also organised in separate files to simplify integration in other projects.
-* A-Frame is a great framework to quickly build and deploy VR experiences across different VR systems, without the hassle of learning and setting up Unity, Unreal or Godot, and without the need to publish through an app store.
+* This project is heavily inspired by https://github.com/KaiRo-at/vrmap. While VRmap loads only a limited area, osm4vr supports loading tiles and buildings dynamically while moving around, as well as loading a geojson file. The components are also organised in separate files to simplify integration in other projects.
+* [A-Frame](https://aframe.io/) is a great framework to quickly build and deploy VR experiences across different VR systems, without the hassle of learning and setting up Unity, Unreal or Godot, and without the need to publish through an app store.
 * OpenStreetMap is like the Wikipedia for mapping and run by volunteers on donated servers. If you use this code in your own projects please adhere to their [usage policies for tiles](https://operations.osmfoundation.org/policies/tiles/) and [for the API](https://dev.overpass-api.de/overpass-doc/en/preface/commons.html) which is used for building/feature data. The search box uses OSM's [nominatim service](https://operations.osmfoundation.org/policies/nominatim/). If you expect higher usage, set up your own instances of these services and/or pre-download building data as geojson from the Overpass API.
+* Depends on [osm2geojson](https://github.com/tyrasd/osmtogeojson) when loading data dynamically from OSM's Overpass API
 * The name osm4vr has been used before by a now abandoned project, no connection
