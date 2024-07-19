@@ -20,8 +20,22 @@ Moving around also works in a regular 2d web browser (even on mobile), but flapp
 * Controls are very rudimentary (flight is a crude approximation, other controls are partly usable)
 
 ## Integration in other projects
-The A-Frame components here can also be used individually in other projects to support the following use cases, illustrated with basic examples.
-It's recommended to add the necessary files to your project rather than loading them dynamically, as there is currently no plan for a release process, so updates may break in the future.
+The A-Frame components can easily be integrated in other projects to support buildings and/or a plane with 2d map, illustrated below with basic examples.
+* `osm-tiles` includes a 2d OSM map as a plane on the ground
+* `osm-geojson` includes buildings (and potentially other features) from OpenStreetMap and/or a geojson file
+
+Both components need an initial geoposition which is then mapped to A-Frame's (0,0,0) start coordinates, other parameters are optional.
+
+| Parameters | Description | osm-tiles | osm-geojson |
+| ----------- | ----------- | --- | --- |
+| lat, lon | Latitude/longitude as WGS84, e.g. 52.52 and 13.41 (Berlin) | Required | Required |
+| zoom | [Zoom level](https://wiki.openstreetmap.org/wiki/Zoom_levels), can differ between the components | Optional, for size and resolution of map tiles | Optional, to load more or less buildings at once |
+| radius_m | Radius in meters, minimum area to load for tiles and buildings, can differ | Optional | Optional |
+| trackId | `id` of camera element for dynamic data loading while moving | Optional | Optional |
+| src | asset `id` to load a static geojson file | - | Optional |
+| url | Base URL of map tile service, default is OSM | Optional | - |
+
+The examples below take the latest version from github, but it's better to add the necessary files to your project directly, as there is currently no release process and future updates might break your site otherwise.
 
 ### Include map tiles as a plane
 ```javascript
@@ -56,7 +70,7 @@ To create a geojson file from OpenStreetMap, try the wizard at https://overpass-
 );out;>;out qt;
 ```
 
-then add the resulting geojson file as asset and set a lat/lon within the extracted area
+Then add the resulting geojson file as an asset and set a lat/lon within the extracted area
 ```javascript
 <!doctype html>
 <html>
