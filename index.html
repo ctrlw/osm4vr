@@ -85,6 +85,7 @@
     <a-entity osm-geojson="lat: 52.52; lon: 13.41; radius_m: 500; trackId: head"></a-entity>
   </a-scene>
 
+
   <!-- Some javascript to interact with the scene and its contents -->
   <script>
     const rig = document.getElementById('rig');
@@ -96,44 +97,52 @@
       head.components.birdman.dir.z = -0.1;
       head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
     });
-    
-  function toggleMenu() {
-    let style = document.getElementById('info').style;
-    style.display = style.display == 'none' ? 'block' : 'none';
-  }
 
-  // switch to the location in the coordinate input fields, hide the forms
-  function loadLocation() {
-    const lat = document.getElementById('latitude').value;
-    const lon = document.getElementById('longitude').value;
-    console.log('loadLocation', lat, lon);
+    // if url contains lat,lon parameters, load that position, e.g. https://ctrlw.github.io/osm4vr/?lat=52.5163&lon=13.3783
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('lat') && urlParams.has('lon')) {
+      document.getElementById('latitude').value = urlParams.get('lat');
+      document.getElementById('longitude').value = urlParams.get('lon');
+      loadLocation();
+    }
+      
+    function toggleMenu() {
+      let style = document.getElementById('info').style;
+      style.display = style.display == 'none' ? 'block' : 'none';
+    }
 
-    // set user position to origin
-    document.getElementById('rig').object3D.position.set(0, 0, 0);
-    document.getElementById('head').object3D.position.set(0, 0, 0);
+    // switch to the location in the coordinate input fields, hide the forms
+    function loadLocation() {
+      const lat = document.getElementById('latitude').value;
+      const lon = document.getElementById('longitude').value;
+      console.log('loadLocation', lat, lon);
 
-    let tiles = document.querySelector('a-entity[osm-tiles]');
-    tiles.setAttribute('osm-tiles', `lat: ${lat}; lon: ${lon}`);
+      // set user position to origin
+      document.getElementById('rig').object3D.position.set(0, 0, 0);
+      document.getElementById('head').object3D.position.set(0, 0, 0);
 
-    let buildings = document.querySelector('a-entity[osm-geojson]');
-    buildings.setAttribute('osm-geojson', `lat: ${lat}; lon: ${lon}`);
+      let tiles = document.querySelector('a-entity[osm-tiles]');
+      tiles.setAttribute('osm-tiles', `lat: ${lat}; lon: ${lon}`);
 
-    // hide the info element
-    document.getElementById('info').style.display = 'none';
-  }
+      let buildings = document.querySelector('a-entity[osm-geojson]');
+      buildings.setAttribute('osm-geojson', `lat: ${lat}; lon: ${lon}`);
 
-  // query OSM's nominatim API with the search query input and update the coordinate input fields
-  function searchLocation() {
-    const search = document.getElementById('searchInput').value;
-    fetch(`https://nominatim.openstreetmap.org/search?q=${search}&format=json`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.length > 0) {
-          document.getElementById('latitude').value = parseFloat(data[0].lat).toFixed(5);
-          document.getElementById('longitude').value = parseFloat(data[0].lon).toFixed(5);
-        }
-      });
-  }
-</script>
+      // hide the info element
+      document.getElementById('info').style.display = 'none';
+    }
+
+    // query OSM's nominatim API with the search query input and update the coordinate input fields
+    function searchLocation() {
+      const search = document.getElementById('searchInput').value;
+      fetch(`https://nominatim.openstreetmap.org/search?q=${search}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.length > 0) {
+            document.getElementById('latitude').value = parseFloat(data[0].lat).toFixed(5);
+            document.getElementById('longitude').value = parseFloat(data[0].lon).toFixed(5);
+          }
+        });
+    }
+  </script>
 </body>
 </html>
