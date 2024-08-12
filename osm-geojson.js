@@ -328,22 +328,19 @@ AFRAME.registerComponent('osm-geojson', {
     let buildings = new Set();
     let parts = [];
 
-    // iterate over all features and add buildings to the scene
+    // iterate over all features and create their 2d outlines
     for (let feature of geojson.features) {
       let properties = feature.properties;
       if (('building' in properties || 'building:part' in properties) && !this.featuresLoaded[feature.id]) {
         this.featuresLoaded[feature.id] = true;
-        let building = this.feature2building(feature, this.data.lat, this.data.lon);
-        if (building) {
-          this.el.appendChild(building);
-          count += 1;
-          if ('building' in properties) {
-            buildings.add(building);
-          } else {
-            parts.push(building);
-          }
+        let paths = feature.geometry.coordinates;
+        let outline = this.geojsonCoords2plane(paths[0], this.data.lat, this.data.lon);
+        properties.tmp_outline = outline;
+        properties.tmp_bbox = new THREE.Box2().setFromPoints(outline);
+        if ('building' in properties) {
+          buildings.add(feature);
         } else {
-          skipped += 1;
+          parts.push(feature);
         }
       } else {
         if (!this.featuresLoaded[feature.id] && feature.geometry.type != 'Point') {
@@ -357,26 +354,39 @@ AFRAME.registerComponent('osm-geojson', {
     // Unfortunately, there's no enforced relation:
     // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
     // TODO: optimise logic and performance if needed
-    let outer = new THREE.Box3();
-    let inner = new THREE.Box3();
     for (let part of parts) {
-      let uselessBuildings = new Set();
-      inner.setFromObject(part.object3D);
+      let skippedBuildings = new Set();
       for (let building of buildings) {
-        if (part.object3D.position.distanceTo(building.object3D.position) < 1) {
-          outer.setFromObject(building.object3D);
-          if (outer.containsBox(inner)) {
-            uselessBuildings.add(building);
-          }
+        if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
+          skippedBuildings.add(building);
         }
       }
-      for (let building of uselessBuildings) {
-        this.el.removeChild(building);
+      for (let building of skippedBuildings) {
         buildings.delete(building);
-        count -= 1;
+        skipped += 1;
+      }
+
+      // add the part to the scene
+      let building = this.feature2building(part, this.data.lat, this.data.lon);
+      if (building) {
+        this.el.appendChild(building);
+        count += 1;
+      } else {
         skipped += 1;
       }
     }
+
+    // add the buildings to the scene
+    for (let feature of buildings) {
+      let building = this.feature2building(feature, this.data.lat, this.data.lon);
+      if (building) {
+        this.el.appendChild(building);
+        count += 1;
+      } else {
+        skipped += 1;
+      }
+    }
+
     console.log("Loaded", count, "buildings, ignored", ignored, ", skipped", skipped);
   },
 
