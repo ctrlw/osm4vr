@@ -186,29 +186,30 @@ AFRAME.registerComponent('osm-geojson', {
 
   // Convert geocoordinates into meter-based positions around the given base
   // coordinates order in geojson is longitude, latitude!
-  // coords is a path of [lon, lat] positions, e.g. [[13.41224,52.51712],[13.41150,52.51702],...] 
+  // coords is a path of [lon, lat] positions, e.g. [[13.41224,52.51712],[13.41150,52.51702],...]
+  // result is a Vector2 array of positions in meters on the plane
   geojsonCoords2plane: function(coords, baseLat, baseLon) {
     let circumference_m = this.EQUATOR_M * Math.cos(baseLat * Math.PI / 180);
-    return coords.map(([lon, lat]) => [
+    return coords.map(([lon, lat]) => new THREE.Vector2(
       (lon - baseLon) / 360 * circumference_m,
       (lat - baseLat) / 360 * this.POLES_M
-    ]);
+    ));
   },
 
   // Create the Aframe geometry by extruding building footprints to given height
-  // xyCoords is an array of [x,y] positions in meters, e.g. [[0, 0], [1, 0], [1, 1], [0, 1]]
-  // xyHoles is an optional array of paths to describe holes in the building footprint
+  // xyCoords is a Vector2 array of x,y positions in meters
+  // xyHoles is an optional array of Vector2 paths to describe holes in the building footprint
   // height is the building height in meters from the base to the top, null to use a default
   // if minHeight is given, the geometry is moved up to reach from minHeight to the top
   createGeometry: function(xyCoords, xyHoles, height, minHeight) {
-    let shape = new THREE.Shape(xyCoords.map(xy => new THREE.Vector2(xy[0], xy[1])));
+    let shape = new THREE.Shape(xyCoords);
     if (height === null) {
       // set the height based on the perimeter of the building if missing other info
       let perimeter_m = shape.getLength();
       height = Math.min(this.DEFAULT_BUILDING_HEIGHT_M, perimeter_m / 5);  
     }
     for (let hole of xyHoles) {
-      shape.holes.push(new THREE.Path(hole.map(xy => new THREE.Vector2(xy[0], xy[1]))));
+      shape.holes.push(new THREE.Path(hole));
     }
     height -= minHeight;
     let geometry = new THREE.ExtrudeGeometry(shape, {depth: height, bevelEnabled: false});
