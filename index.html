@@ -99,6 +99,15 @@
       head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
     });
 
+    // adapted from https://stackoverflow.com/a/53009978/2437664
+    // let's the user take off and glide into the view direction
+    window.addEventListener('wheel', event => {
+      const delta = event.deltaY;
+      rig.object3D.position.y += 1;
+      head.components.birdman.dir.z = Math.sign(delta);
+      head.components.birdman.dir.applyAxisAngle(VAXIS, head.object3D.rotation.y);
+    });
+
     // if url contains lat,lon parameters, load that position, e.g. https://ctrlw.github.io/osm4vr/?lat=52.5163&lon=13.3783
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('lat') && urlParams.has('lon')) {
