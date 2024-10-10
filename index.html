@@ -5,6 +5,7 @@
   <title>osm4vr demo - Fly through the world in VR with OSM map data</title>
   <meta name="description" content="osm4vr: Fly through the world in Virtual Reality, with map and buildings from OpenStreetmap">
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-extras/dist/aframe-extras.controls.min.js"></script>
   <script src="https://unpkg.com/osmtogeojson/osmtogeojson.js"></script>
   <script src="osm-geojson.js"></script>
   <script src="osm-tiles.js"></script>
@@ -67,7 +68,7 @@
     </a-assets>
 
     <!-- The rig contains the camera and can move around -->
-    <a-entity id="rig" position="0 0 0" rotation="0 0 0">
+    <a-entity id="rig" position="0 0 0" rotation="0 0 0" movement-controls="speed: 1; fly: true; camera: #head;">
       <!-- Camera position and rotation in the rig get overwritten by the actual VR head-set, starting at default height 1.6m -->
       <a-entity id="head" camera look-controls wasd-controls="fly: true" birdman log2hud="target: chud" position="0 1.6 0">
         <!-- "Head up displays" to show live data for camera and left/right hand controller -->
