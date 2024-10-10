@@ -189,6 +189,10 @@ AFRAME.registerComponent('osm-geojson', {
   // coords is a path of [lon, lat] positions, e.g. [[13.41224,52.51712],[13.41150,52.51702],...]
   // result is a Vector2 array of positions in meters on the plane
   geojsonCoords2plane: function(coords, baseLat, baseLon) {
+    if (coords.length == 1 && coords[0].length > 2) {
+      console.log(coords);
+      coords = coords[0];
+    }
     let circumference_m = this.EQUATOR_M * Math.cos(baseLat * Math.PI / 180);
     return coords.map(([lon, lat]) => new THREE.Vector2(
       (lon - baseLon) / 360 * circumference_m,
@@ -328,12 +332,19 @@ AFRAME.registerComponent('osm-geojson', {
     let buildings = new Set();
     let parts = [];
 
+    let start = performance.now();
     // iterate over all features and create their 2d outlines
     for (let feature of geojson.features) {
       let properties = feature.properties;
-      if (('building' in properties || 'building:part' in properties) && !this.featuresLoaded[feature.id]) {
+      let geometry = feature.geometry;
+      let isArea = geometry.type == 'Polygon' || geometry.type == 'MultiPolygon';
+      let isNotArea = geometry.type == 'LineString' || geometry.type == 'Point';
+      if (!this.featuresLoaded[feature.id] && !isNotArea && ('building' in properties || 'building:part' in properties)) {
         this.featuresLoaded[feature.id] = true;
         let paths = feature.geometry.coordinates;
+        if (paths[0].length < 5) {
+          // console.log(feature);
+        }
         let outline = this.geojsonCoords2plane(paths[0], this.data.lat, this.data.lon);
         properties.tmp_outline = outline;
         properties.tmp_bbox = new THREE.Box2().setFromPoints(outline);
@@ -343,26 +354,37 @@ AFRAME.registerComponent('osm-geojson', {
           parts.push(feature);
         }
       } else {
-        if (!this.featuresLoaded[feature.id] && feature.geometry.type != 'Point') {
-          // console.log(feature);
+        if (!this.featuresLoaded[feature.id] && geometry.type != 'Point') {
+          console.log(feature);
         }
         ignored += 1;
       }
     }
+    let end = performance.now();
+    console.log("Processed", geojson.features.length, "features in", end - start, "ms");
+    start = end;
 
     // remove buildings that are covered by building parts
     // Unfortunately, there's no enforced relation:
     // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
     // TODO: optimise logic and performance if needed
+    console.log('Checking building parts');
     for (let part of parts) {
       let skippedBuildings = new Set();
       for (let building of buildings) {
         if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
-          skippedBuildings.add(building);
+          if ('min_height' in part.properties && 'height' in building.properties
+              && part.properties.min_height >= building.properties.height) {
+            // building part is on top of building, keep both; examples around Brandenburg Gate
+          } else {
+            skippedBuildings.add(building);
+          }
         }
       }
       for (let building of skippedBuildings) {
         buildings.delete(building);
+        // building.properties.height = '0.5'; // set to small height to stay visible
+        console.log(building);
         skipped += 1;
       }
 
@@ -375,6 +397,10 @@ AFRAME.registerComponent('osm-geojson', {
         skipped += 1;
       }
     }
+    console.log('done with building parts');
+    end = performance.now();
+    console.log("Added", count, "building parts in", end - start, "ms");
+    start = end;
 
     // add the buildings to the scene
     for (let feature of buildings) {
@@ -386,6 +412,8 @@ AFRAME.registerComponent('osm-geojson', {
         skipped += 1;
       }
     }
+    end = performance.now();
+    console.log("Added", count, "buildings in", end - start, "ms");
 
     console.log("Loaded", count, "buildings, ignored", ignored, ", skipped", skipped);
   },
