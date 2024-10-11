@@ -337,9 +337,9 @@ AFRAME.registerComponent('osm-geojson', {
     for (let feature of geojson.features) {
       let properties = feature.properties;
       let geometry = feature.geometry;
-      let isArea = geometry.type == 'Polygon' || geometry.type == 'MultiPolygon';
-      let isNotArea = geometry.type == 'LineString' || geometry.type == 'Point';
-      if (!this.featuresLoaded[feature.id] && !isNotArea && ('building' in properties || 'building:part' in properties)) {
+      // let isArea = geometry.type == 'Polygon' || geometry.type == 'MultiPolygon';
+      let isArea = geometry.type != 'LineString' && geometry.type != 'Point';
+      if (!this.featuresLoaded[feature.id] && isArea && ('building' in properties || 'building:part' in properties)) {
         this.featuresLoaded[feature.id] = true;
         let paths = feature.geometry.coordinates;
         if (paths[0].length < 5) {
