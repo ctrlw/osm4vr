@@ -364,6 +364,12 @@ AFRAME.registerComponent('osm-geojson', {
     console.log("Processed", geojson.features.length, "features in", end - start, "ms");
     start = end;
 
+    // <a-entity geometry-merger="preserveOriginal: false" material="color: #AAA">
+    let mergedBuildings = document.createElement('a-entity');
+    mergedBuildings.setAttribute('geometry-merger', 'preserveOriginal: false');
+    mergedBuildings.setAttribute('material', 'color: #AAA');
+
+
     // remove buildings that are covered by building parts
     // Unfortunately, there's no enforced relation:
     // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
@@ -391,7 +397,7 @@ AFRAME.registerComponent('osm-geojson', {
       // add the part to the scene
       let building = this.feature2building(part, this.data.lat, this.data.lon);
       if (building) {
-        this.el.appendChild(building);
+        mergedBuildings.appendChild(building);
         count += 1;
       } else {
         skipped += 1;
@@ -406,12 +412,13 @@ AFRAME.registerComponent('osm-geojson', {
     for (let feature of buildings) {
       let building = this.feature2building(feature, this.data.lat, this.data.lon);
       if (building) {
-        this.el.appendChild(building);
+        mergedBuildings.appendChild(building);
         count += 1;
       } else {
         skipped += 1;
       }
     }
+    this.el.appendChild(mergedBuildings);
     end = performance.now();
     console.log("Added", count, "buildings in", end - start, "ms");
 
