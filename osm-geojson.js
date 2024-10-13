@@ -415,10 +415,10 @@ AFRAME.registerComponent('osm-geojson', {
     start = end;
 
     // <a-entity geometry-merger="preserveOriginal: false" material="color: #AAA">
-    let parent = document.createElement('a-entity');
-    parent.setAttribute('geometry-merger', 'preserveOriginal: false');
-    parent.setAttribute('material', 'color: #AAA');
-    // let parent = this.el;
+    // let parent = document.createElement('a-entity');
+    // parent.setAttribute('geometry-merger', 'preserveOriginal: false');
+    // parent.setAttribute('material', 'color: #AAA');
+    let parent = this.el;
 
     for (let feature of geojson.features) {
       if (!featureIds.has(feature.id)) {
@@ -434,7 +434,7 @@ AFRAME.registerComponent('osm-geojson', {
       }
     }
 
-    this.el.appendChild(parent);
+    // this.el.appendChild(parent);
     end = performance.now();
     console.log("Added", count, "buildings in", end - start, "ms");
 
