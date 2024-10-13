@@ -324,34 +324,39 @@ AFRAME.registerComponent('osm-geojson', {
     return [south, west, north, east];
   },
 
-  // Iterate over features in geojson and add buildings to the scene
-  addBuildings: function(geojson) {
-    let count = 0;
-    let ignored = 0;
-    let skipped = 0;
-    let buildings = new Set();
-    let parts = [];
+  // Iterate over all features, match buildings with their parts and decide which ones to keep
+  // Most buildings don't have separate building parts, but some have multiple parts
+  // Some buildings are completely replaced by their parts, others use parts as an extension, e.g. for the roof
+  // See https://wiki.openstreetmap.org/wiki/Key:building:part
+  // Unfortunately, there's no enforced relation:
+  // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
+  filterBuildingParts: function(features, featuresLoaded, lat, lon) {
+    let id2feature = {};  // map feature id to feature
+    let buildingIds = new Set();  // feature ids of buildings
+    let partIds = new Set();  // feature ids of building parts
+    let ignored = 0;  // count features that are not buildings or parts
 
-    let start = performance.now();
-    // iterate over all features and create their 2d outlines
-    for (let feature of geojson.features) {
+    // Iterate over all features, create their 2d outlines and 
+    for (let feature of features) {
       let properties = feature.properties;
       let geometry = feature.geometry;
       // let isArea = geometry.type == 'Polygon' || geometry.type == 'MultiPolygon';
       let isArea = geometry.type != 'LineString' && geometry.type != 'Point';
-      if (!this.featuresLoaded[feature.id] && isArea && ('building' in properties || 'building:part' in properties)) {
-        this.featuresLoaded[feature.id] = true;
+      // TODO: check if special handling is needed when building parts are in different tiles
+      if (!featuresLoaded[feature.id] && isArea && ('building' in properties || 'building:part' in properties)) {
+        featuresLoaded[feature.id] = true;
         let paths = feature.geometry.coordinates;
         if (paths[0].length < 5) {
           // console.log(feature);
         }
-        let outline = this.geojsonCoords2plane(paths[0], this.data.lat, this.data.lon);
+        let outline = this.geojsonCoords2plane(paths[0], lat, lon);
         properties.tmp_outline = outline;
         properties.tmp_bbox = new THREE.Box2().setFromPoints(outline);
+        id2feature[feature.id] = feature;
         if ('building' in properties) {
-          buildings.add(feature);
+          buildingIds.add(feature.id);
         } else {
-          parts.push(feature);
+          partIds.add(feature.id);
         }
       } else {
         if (!this.featuresLoaded[feature.id] && geometry.type != 'Point') {
@@ -360,65 +365,76 @@ AFRAME.registerComponent('osm-geojson', {
         ignored += 1;
       }
     }
+
+    // Identify buildings that are covered by building parts
+    // Generally, parts are contained in the building's footprint
+    // If parts are outside, a relation should be used
+    // If a part is on top of a building, both are kept
+    console.log('Checking building parts');
+    let baseBuildingIds = new Set();  // feature ids of buildings that have building parts
+    let skippedBuildingIds = new Set();  // feature ids of buildings that are fully replaced by parts
+    for (let partId of partIds) {
+      let part = id2feature[partId];
+      // let building = this.findBaseBuilding(part, id2feature, baseBuildings);
+      for (let buildingId of buildingIds) {
+        let building = id2feature[buildingId];
+        if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
+          baseBuildingIds.add(buildingId);
+          if ('min_height' in part.properties && 'height' in building.properties
+              && part.properties.min_height >= building.properties.height) {
+            // building part is on top of building, keep both; e.g. US embassy near Brandenburg Gate
+          } else {
+            skippedBuildingIds.add(buildingId);
+          }
+        }
+      }
+    }
+    
+    // return featureIds without the skippedBuildingIds
+    // TODO: use the new Set operations once they are widely supported (just getting started in 2024)
+    // return new Set([...buildingIds].filter(x => !skippedBuildingIds.has(x)));
+    let result = new Set();
+    for (let fid of Object.keys(id2feature)) {
+      if (!skippedBuildingIds.has(fid)) {
+        result.add(fid);
+      }
+    }
+    return result;
+  },
+
+  // Iterate over features in geojson and add buildings to the scene
+  addBuildings: function(geojson) {
+    let count = 0;
+    let ignored = 0;
+    let skipped = 0;
+
+    let start = performance.now();
+    let featureIds = this.filterBuildingParts(geojson.features, this.featuresLoaded, this.data.lat, this.data.lon);
     let end = performance.now();
     console.log("Processed", geojson.features.length, "features in", end - start, "ms");
     start = end;
 
     // <a-entity geometry-merger="preserveOriginal: false" material="color: #AAA">
-    let mergedBuildings = document.createElement('a-entity');
-    mergedBuildings.setAttribute('geometry-merger', 'preserveOriginal: false');
-    mergedBuildings.setAttribute('material', 'color: #AAA');
+    let parent = document.createElement('a-entity');
+    parent.setAttribute('geometry-merger', 'preserveOriginal: false');
+    parent.setAttribute('material', 'color: #AAA');
+    // let parent = this.el;
 
-
-    // remove buildings that are covered by building parts
-    // Unfortunately, there's no enforced relation:
-    // https://help.openstreetmap.org/questions/60330/how-do-you-create-a-relation-between-a-building-and-3d-building-parts
-    // TODO: optimise logic and performance if needed
-    console.log('Checking building parts');
-    for (let part of parts) {
-      let skippedBuildings = new Set();
-      for (let building of buildings) {
-        if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
-          if ('min_height' in part.properties && 'height' in building.properties
-              && part.properties.min_height >= building.properties.height) {
-            // building part is on top of building, keep both; examples around Brandenburg Gate
-          } else {
-            skippedBuildings.add(building);
-          }
-        }
+    for (let feature of geojson.features) {
+      if (!featureIds.has(feature.id)) {
+        ignored += 1;
+        continue;
       }
-      for (let building of skippedBuildings) {
-        buildings.delete(building);
-        // building.properties.height = '0.5'; // set to small height to stay visible
-        console.log(building);
-        skipped += 1;
-      }
-
-      // add the part to the scene
-      let building = this.feature2building(part, this.data.lat, this.data.lon);
-      if (building) {
-        mergedBuildings.appendChild(building);
-        count += 1;
-      } else {
-        skipped += 1;
-      }
-    }
-    console.log('done with building parts');
-    end = performance.now();
-    console.log("Added", count, "building parts in", end - start, "ms");
-    start = end;
-
-    // add the buildings to the scene
-    for (let feature of buildings) {
       let building = this.feature2building(feature, this.data.lat, this.data.lon);
       if (building) {
-        mergedBuildings.appendChild(building);
+        parent.appendChild(building);
         count += 1;
       } else {
         skipped += 1;
       }
     }
-    this.el.appendChild(mergedBuildings);
+
+    this.el.appendChild(parent);
     end = performance.now();
     console.log("Added", count, "buildings in", end - start, "ms");
 
