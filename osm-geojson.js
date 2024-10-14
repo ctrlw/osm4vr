@@ -324,6 +324,22 @@ AFRAME.registerComponent('osm-geojson', {
     return [south, west, north, east];
   },
 
+  // Given a building part, find the building it belongs to and add it to baseBuildings
+  findBaseBuilding: function(part, buildingIds, id2feature, baseBuildingIds) {
+    for (let buildingId of buildingIds) {
+      let building = id2feature[buildingId];
+      if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
+        return buildingId;
+      }
+    }
+    return 0;
+  },
+
+  // Check if a building part feature is a roof part
+  isRoof: function(part) {
+    return 'building:part' in part.properties && part.properties['building:part'] == 'roof';
+  },
+
   // Iterate over all features, match buildings with their parts and decide which ones to keep
   // Most buildings don't have separate building parts, but some have multiple parts
   // Some buildings are completely replaced by their parts, others use parts as an extension, e.g. for the roof
@@ -373,19 +389,34 @@ AFRAME.registerComponent('osm-geojson', {
     console.log('Checking building parts');
     let baseBuildingIds = new Set();  // feature ids of buildings that have building parts
     let skippedBuildingIds = new Set();  // feature ids of buildings that are fully replaced by parts
+    let baseBuildings2parts = {};  // map building id to part ids
     for (let partId of partIds) {
       let part = id2feature[partId];
-      // let building = this.findBaseBuilding(part, id2feature, baseBuildings);
-      for (let buildingId of buildingIds) {
+      if (this.isRoof(part)) {
+        // ignore roof parts, they are not used to replace the building
+        continue;
+      }
+      let buildingId = this.findBaseBuilding(part, buildingIds, id2feature, baseBuildingIds);
+      if (buildingId) {
+        baseBuildingIds.add(buildingId);
+        baseBuildings2parts[buildingId] = baseBuildings2parts[buildingId] || new Set();
+        baseBuildings2parts[buildingId].add(partId);
+      }
+    }
+
+    // Check the buildings with parts and skip those that are fully replaced
+    for (let buildingId of baseBuildingIds) {
+      for (let partId of baseBuildings2parts[buildingId]) {
+        let part = id2feature[partId];
         let building = id2feature[buildingId];
-        if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
-          baseBuildingIds.add(buildingId);
-          if ('min_height' in part.properties && 'height' in building.properties
-              && part.properties.min_height >= building.properties.height) {
-            // building part is on top of building, keep both; e.g. US embassy near Brandenburg Gate
-          } else {
-            skippedBuildingIds.add(buildingId);
-          }
+        // if parts are above the building, keep the building
+        if ('min_height' in part.properties && 'height' in building.properties
+          && part.properties.min_height >= building.properties.height) {
+          // building part is on top of building, keep both; e.g. US embassy near Brandenburg Gate
+          // console.log('Ignoring building part on top of building', part.properties, building.properties);
+        } else {
+          skippedBuildingIds.add(buildingId);
+          break;
         }
       }
     }
