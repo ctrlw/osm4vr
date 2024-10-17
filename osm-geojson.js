@@ -369,15 +369,24 @@ AFRAME.registerComponent('osm-geojson', {
     return [south, west, north, east];
   },
 
-  // Given a building part, find the building it belongs to and add it to baseBuildings
-  findBaseBuilding: function(part, buildingIds, id2feature, baseBuildingIds) {
+  // Given a building part, find the building it belongs to
+  findBaseBuilding: function(part, buildingIds, id2feature) {
+    let result = 0;
     for (let buildingId of buildingIds) {
       let building = id2feature[buildingId];
       if (building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
-        return buildingId;
+        if (result) {
+          // console.log('MULTIPLE BASE BUILDINGS: ', building);
+          // if the part is contained in multiple building footprints, use the smaller one
+          if (id2feature[result].properties.tmp_bbox.containsBox(id2feature[buildingId].properties.tmp_bbox)) {
+            result = buildingId;
+          }
+        } else {
+          result = buildingId;
+        }
       }
     }
-    return 0;
+    return result;
   },
 
   // Check if a building part feature is a roof part
