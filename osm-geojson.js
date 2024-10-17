@@ -134,6 +134,47 @@ AFRAME.registerComponent('osm-geojson', {
     return [x, y];
   },
 
+  // Debug function to log feature properties and geometry
+  // This is useful to debug specific features like buildings and building parts
+  // The output can be added to a reference geojson file
+  // To simplify the output, we log geopositions with reduced precision and each path as one line
+  logFeature: function(feature) {
+    let s = '{"type": "Feature", "properties": {' + "\n";
+    s += Object.entries(feature.properties).map(([key, value]) => {if (!key.startsWith('tmp_')) return `  "${key}": "${value}"`;}).join(",\n") + "\n";
+    s += `}, "geometry": {"type": "${feature.geometry.type}", "coordinates": [\n`;
+    let outlines = [];
+    for (let path of feature.geometry.coordinates) {
+      outlines.push("  [" + path.map(([lon, lat]) => `[${lon.toFixed(5)},${lat.toFixed(5)}]`).join(',') + "]");
+    }
+    s += outlines.join(",\n") + `\n]},\n "id": "${feature.id}"\n},`;
+    console.log(s);
+  },
+
+  // Log matching features and their related building parts
+  // names is an optional array of feature names to log
+  logFeatures: function(features, names) {
+    let buildings = [];
+    let parts = [];
+    for (let i = 0; i < features.length; i++) {
+      let properties = features[i].properties;
+      if ('building' in properties && (!names || names.includes(properties.name))) {
+        buildings.push(i);
+      } else if ('building:part' in properties){
+        parts.push(i);
+      }
+    }
+    for (let i of buildings) {
+      let building = features[i];
+      this.logFeature(building);
+      for (let j of parts) {
+        let part = features[j];
+        if ('tmp_bbox' in part.properties && building.properties.tmp_bbox.containsBox(part.properties.tmp_bbox)) {
+          this.logFeature(part);
+        }
+      }
+    }
+  },
+
   // Compute center of the given geojson features
   // we ignore point features and just take the first coordinate pair of each path
   // TODO: just use the bounding box center
@@ -387,6 +428,7 @@ AFRAME.registerComponent('osm-geojson', {
     // If parts are outside, a relation should be used
     // If a part is on top of a building, both are kept
     console.log('Checking building parts');
+    let partsAndBuildingIds = new Set(); // only contain building parts and their base buildings
     let baseBuildingIds = new Set();  // feature ids of buildings that have building parts
     let skippedBuildingIds = new Set();  // feature ids of buildings that are fully replaced by parts
     let baseBuildings2parts = {};  // map building id to part ids
@@ -394,6 +436,8 @@ AFRAME.registerComponent('osm-geojson', {
       let part = id2feature[partId];
       if (this.isRoof(part)) {
         // ignore roof parts, they are not used to replace the building
+        partsAndBuildingIds.add(partId);
+        // this.logFeature(part);
         continue;
       }
       let buildingId = this.findBaseBuilding(part, buildingIds, id2feature, baseBuildingIds);
@@ -406,9 +450,13 @@ AFRAME.registerComponent('osm-geojson', {
 
     // Check the buildings with parts and skip those that are fully replaced
     for (let buildingId of baseBuildingIds) {
+      partsAndBuildingIds.add(buildingId);
+      let building = id2feature[buildingId];
+      // this.logFeature(building);
       for (let partId of baseBuildings2parts[buildingId]) {
+        partsAndBuildingIds.add(partId);
         let part = id2feature[partId];
-        let building = id2feature[buildingId];
+        // this.logFeature(part);
         // if parts are above the building, keep the building
         if ('min_height' in part.properties && 'height' in building.properties
           && part.properties.min_height >= building.properties.height) {
@@ -420,6 +468,8 @@ AFRAME.registerComponent('osm-geojson', {
         }
       }
     }
+    this.logFeatures(features, ['Brandenburger Tor', 'Botschaft der Vereinigten Staaten von Amerika', 'Allianz Forum', 'Berliner Schloss', 'Berliner Fernsehturm']);
+    // return partsAndBuildingIds;
     
     // return featureIds without the skippedBuildingIds
     // TODO: use the new Set operations once they are widely supported (just getting started in 2024)
