@@ -298,8 +298,12 @@ AFRAME.registerComponent('osm-geojson', {
     if ('height' in properties) {
       return this.height2meters(properties.height);
     }
-    if ("building:levels" in properties) {
+    if ('building:levels' in properties) {
       return parseInt(properties["building:levels"]) * this.LEVEL_HEIGHT_M;
+    }
+    if ('roof:height' in properties) {
+      // some building parts have (only) a roof height, e.g. https://www.openstreetmap.org/way/618992347
+      return this.height2meters(properties['roof:height']);
     }
     if (properties.building in this.BUILDING_TO_METER) {
       return this.BUILDING_TO_METER[properties.building];
