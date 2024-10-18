@@ -460,6 +460,10 @@ AFRAME.registerComponent('osm-geojson', {
 
     // Check the buildings with parts and skip those that are fully replaced
     for (let buildingId of baseBuildingIds) {
+      if (baseBuildings2parts[buildingId].size == 1) {
+        // a building shouldn't be replaced by a single part, e.g. a roof, keep both
+        continue;
+      }
       let building = id2feature[buildingId];
       for (let partId of baseBuildings2parts[buildingId]) {
         let part = id2feature[partId];
