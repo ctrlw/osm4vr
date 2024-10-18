@@ -441,7 +441,6 @@ AFRAME.registerComponent('osm-geojson', {
     // If parts are outside, a relation should be used
     // If a part is on top of a building, both are kept
     console.log('Checking building parts');
-    let partsAndBuildingIds = new Set(); // only contain building parts and their base buildings
     let baseBuildingIds = new Set();  // feature ids of buildings that have building parts
     let skippedBuildingIds = new Set();  // feature ids of buildings that are fully replaced by parts
     let baseBuildings2parts = {};  // map building id to part ids
@@ -449,8 +448,6 @@ AFRAME.registerComponent('osm-geojson', {
       let part = id2feature[partId];
       if (this.isRoof(part)) {
         // ignore roof parts, they are not used to replace the building
-        partsAndBuildingIds.add(partId);
-        // this.logFeature(part);
         continue;
       }
       let buildingId = this.findBaseBuilding(part, buildingIds, id2feature, baseBuildingIds);
@@ -463,26 +460,20 @@ AFRAME.registerComponent('osm-geojson', {
 
     // Check the buildings with parts and skip those that are fully replaced
     for (let buildingId of baseBuildingIds) {
-      partsAndBuildingIds.add(buildingId);
       let building = id2feature[buildingId];
-      // this.logFeature(building);
       for (let partId of baseBuildings2parts[buildingId]) {
-        partsAndBuildingIds.add(partId);
         let part = id2feature[partId];
-        // this.logFeature(part);
-        // if parts are above the building, keep the building
         if ('min_height' in part.properties && 'height' in building.properties
           && part.properties.min_height >= building.properties.height) {
-          // building part is on top of building, keep both; e.g. US embassy near Brandenburg Gate
+          // building part is on top of building, keep both; e.g. https://www.openstreetmap.org/way/304339260
           // console.log('Ignoring building part on top of building', part.properties, building.properties);
         } else {
           skippedBuildingIds.add(buildingId);
-          break;
+          // break;
         }
       }
     }
-    this.logFeatures(features, ['Brandenburger Tor', 'Botschaft der Vereinigten Staaten von Amerika', 'Allianz Forum', 'Berliner Schloss', 'Berliner Fernsehturm']);
-    // return partsAndBuildingIds;
+    // this.logFeatures(features, ['Brandenburger Tor', 'Botschaft der Vereinigten Staaten von Amerika', 'Allianz Forum', 'Berliner Schloss', 'Berliner Fernsehturm']);
     
     // return featureIds without the skippedBuildingIds
     // TODO: use the new Set operations once they are widely supported (just getting started in 2024)
@@ -521,6 +512,11 @@ AFRAME.registerComponent('osm-geojson', {
       }
       let building = this.feature2building(feature, this.data.lat, this.data.lon);
       if (building) {
+        // show skipped buildings transparent
+        // if ('building' in feature.properties) {
+        //   let material = building.getAttribute('material');
+        //   building.setAttribute('material', material + ' transparent: true; opacity: 0.5;');
+        // }
         parent.appendChild(building);
         count += 1;
       } else {
