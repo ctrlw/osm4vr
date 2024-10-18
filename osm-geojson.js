@@ -279,6 +279,25 @@ AFRAME.registerComponent('osm-geojson', {
     return entity;
   },
 
+  // Generate a dome / half sphere shaped building part from outline and height, both in meters
+  // if minHeight is given, the shape is extruded from that height upwards
+  // TODO: support elliptical domes (currently only circular)
+  createDome: function(xyCoords, height, minHeight = 0) {
+    let bbox = new THREE.Box2().setFromPoints(xyCoords);
+    let radius_m = (bbox.max.x - bbox.min.x) / 2;
+    let center = new THREE.Vector2;
+    bbox.getCenter(center);
+    // use magic numbers to set default values, the Pi related values define a half sphere
+    let geometry = new THREE.SphereGeometry(1, 32, 16, 0, 2 * Math.PI, 0, 0.5 * Math.PI);
+    geometry.scale(radius_m, height - minHeight, radius_m);
+    geometry.translate(center.x, minHeight, -center.y);
+    let material = new THREE.MeshBasicMaterial({color: 0xaabbcc});
+    let mesh = new THREE.Mesh(geometry, material);
+    let entity = document.createElement('a-entity');
+    entity.setObject3D('mesh', mesh);
+    return entity;
+  },
+
   // Convert a height string to meters, handling different units/formats
   height2meters: function(height) {
     if (height.indexOf("'") > 0) {
@@ -352,6 +371,11 @@ AFRAME.registerComponent('osm-geojson', {
     }
     let minHeight_m = this.feature2minHeight(feature);
     let building = this.createBuilding(xyOutline, xyHoles, height_m, minHeight_m);
+    // special handling for dome shaped building parts
+    if (('roof:shape' in feature.properties || 'building:shape' in feature.properties)
+      && (feature.properties['roof:shape'] == 'dome' || feature.properties['building:shape'] == 'dome')) {
+      building = this.createDome(xyOutline, height_m, minHeight_m);
+    }
 
     let color = this.feature2color(feature);
     let material = `color: ${color}; opacity: 1.0;`;
