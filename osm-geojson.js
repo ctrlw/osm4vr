@@ -298,6 +298,21 @@ AFRAME.registerComponent('osm-geojson', {
     return entity;
   },
 
+  // Generate a dome / half sphere shaped building part from outline and height, both in meters
+  // if minHeight is given, the shape is extruded from that height upwards
+  // TODO: support elliptical domes (currently only circular)
+  createDomeGeometry: function(xyCoords, height, minHeight = 0) {
+    let bbox = new THREE.Box2().setFromPoints(xyCoords);
+    let radius_m = (bbox.max.x - bbox.min.x) / 2;
+    let center = new THREE.Vector2;
+    bbox.getCenter(center);
+    // use magic numbers to set default values, the Pi related values define a half sphere
+    let geometry = new THREE.SphereGeometry(1, 32, 16, 0, 2 * Math.PI, 0, 0.5 * Math.PI);
+    geometry.scale(radius_m, height - minHeight, radius_m);
+    geometry.translate(center.x, minHeight, -center.y);
+    return geometry;
+  },
+
   // Convert a height string to meters, handling different units/formats
   height2meters: function(height) {
     if (height.indexOf("'") > 0) {
@@ -381,6 +396,31 @@ AFRAME.registerComponent('osm-geojson', {
     let material = `color: ${color}; opacity: 1.0;`;
     building.setAttribute('material', material);
     return building;
+  },
+
+  // Convert the geojson feature of a building into a 3d geometry
+  // baseLat and baseLon are used as reference position to convert geocoordinates to meters on plane
+  feature2geometry: function(feature, baseLat, baseLon) {
+    let paths = feature.geometry.coordinates;
+    let xyOutline = this.geojsonCoords2plane(paths[0], baseLat, baseLon);
+    let xyHoles = []; // Add holes to the building if more than one path given
+    for (let i = 1; i < paths.length; i++) {
+      xyHoles.push(this.geojsonCoords2plane(paths[i], baseLat, baseLon));
+    }
+    let height_m = this.feature2height(feature);
+    if (height_m === 0) {
+      return null; // skip building outlines that are covered by building parts
+    }
+    let minHeight_m = this.feature2minHeight(feature);
+    let geometry = this.createGeometry(xyOutline, xyHoles, height_m, minHeight_m);
+    // special handling for dome shaped building parts
+    if (('roof:shape' in feature.properties || 'building:shape' in feature.properties)
+      && (feature.properties['roof:shape'] == 'dome' || feature.properties['building:shape'] == 'dome')) {
+      geometry = this.createDomeGeometry(xyOutline, height_m, minHeight_m);
+    }
+
+    // TODO: handle domes
+    return geometry;
   },
 
   // Compute the bounding box of a tile at given zoom level in degrees
@@ -533,6 +573,7 @@ AFRAME.registerComponent('osm-geojson', {
     // parent.setAttribute('material', 'color: #AAA');
     let parent = this.el;
 
+    let geometries = [];
     for (let feature of geojson.features) {
       if (!featureIds.has(feature.id)) {
         ignored += 1;
@@ -545,12 +586,37 @@ AFRAME.registerComponent('osm-geojson', {
         //   let material = building.getAttribute('material');
         //   building.setAttribute('material', material + ' transparent: true; opacity: 0.5;');
         // }
-        parent.appendChild(building);
+
+        // parent.appendChild(building);
+        let geometry = this.feature2geometry(feature, this.data.lat, this.data.lon);
+        // setting colours per vertex as in https://discourse.threejs.org/t/52799/2
+        // TODO: see if this can be simplified, e.g. with groups
+        geometry = geometry.toNonIndexed();
+        // color.setHex(Math.random() * 0xffffff);
+        let color = new THREE.Color(this.feature2color(feature));
+        const colors = [];
+        const positionAttribute = geometry.getAttribute('position');
+        for (let i = 0; i < positionAttribute.count; i++) {
+          colors.push(color.r, color.g, color.b);
+        }
+        const colorAttribute = new THREE.Float32BufferAttribute(colors, 3);
+        geometry.setAttribute('color', colorAttribute);
+        geometries.push(geometry);
+
         count += 1;
       } else {
         skipped += 1;
       }
     }
+
+    // merge all geometries and add them as one entity to the scene
+    let geometry = THREE.BufferGeometryUtils.mergeBufferGeometries(geometries, false);
+    let material = new THREE.MeshStandardMaterial({vertexColors: true}); //THREE.FaceColors});
+    let mesh = new THREE.Mesh(geometry, material);
+    let entity = document.createElement('a-entity');
+    entity.setObject3D('mesh', mesh);
+    parent.appendChild(entity);
+
 
     // this.el.appendChild(parent);
     end = performance.now();
