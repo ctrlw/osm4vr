@@ -53,8 +53,8 @@ AFRAME.registerComponent('birdman', {
       dir.y -= vspeed * timeDelta / 1000;
 
       // slow down horizontal movement with some resistance
-      let slow_down_factor = 0.98;
-      if (this.dir.length() * 1000 / timeDelta > hspeed) {
+      let slow_down_factor = 0.99;
+      if (this.dir.length() * 1000 / timeDelta > 2 * hspeed) {
         this.dir.x *= slow_down_factor;
         this.dir.z *= slow_down_factor;
       }
@@ -78,7 +78,7 @@ AFRAME.registerComponent('birdman', {
     this.rigPos.add(this.dir);
 
     // add part of the controller direction to the gliding direction
-    let factor = 0.3;
+    let factor = 1;
     this.dir.x += dir.x * factor;
     this.dir.z += dir.z * factor;
   },
