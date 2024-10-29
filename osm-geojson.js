@@ -267,37 +267,6 @@ AFRAME.registerComponent('osm-geojson', {
     return geometry;
   },
 
-  // Generate a building from outline and height, both in meters
-  // if minHeight is given, the building is extruded from that height upwards
-  createBuilding: function(xyCoords, xyHoles, height, minHeight = 0) {
-    // Create a mesh with the geometry and a material
-    let geometry = this.createGeometry(xyCoords, xyHoles, height, minHeight);
-    let material = new THREE.MeshBasicMaterial({color: 0xaabbcc});
-    let mesh = new THREE.Mesh(geometry, material);
-    let entity = document.createElement('a-entity');
-    entity.setObject3D('mesh', mesh);
-    return entity;
-  },
-
-  // Generate a dome / half sphere shaped building part from outline and height, both in meters
-  // if minHeight is given, the shape is extruded from that height upwards
-  // TODO: support elliptical domes (currently only circular)
-  createDome: function(xyCoords, height, minHeight = 0) {
-    let bbox = new THREE.Box2().setFromPoints(xyCoords);
-    let radius_m = (bbox.max.x - bbox.min.x) / 2;
-    let center = new THREE.Vector2;
-    bbox.getCenter(center);
-    // use magic numbers to set default values, the Pi related values define a half sphere
-    let geometry = new THREE.SphereGeometry(1, 32, 16, 0, 2 * Math.PI, 0, 0.5 * Math.PI);
-    geometry.scale(radius_m, height - minHeight, radius_m);
-    geometry.translate(center.x, minHeight, -center.y);
-    let material = new THREE.MeshBasicMaterial({color: 0xaabbcc});
-    let mesh = new THREE.Mesh(geometry, material);
-    let entity = document.createElement('a-entity');
-    entity.setObject3D('mesh', mesh);
-    return entity;
-  },
-
   // Generate a dome / half sphere shaped building part from outline and height, both in meters
   // if minHeight is given, the shape is extruded from that height upwards
   // TODO: support elliptical domes (currently only circular)
@@ -371,31 +340,10 @@ AFRAME.registerComponent('osm-geojson', {
     return 'gray';
   },
 
-  // Convert the geojson feature of a building into a 3d Aframe entity
-  // baseLat and baseLon are used as reference position to convert geocoordinates to meters on plane
-  feature2building: function(feature, baseLat, baseLon) {
-    let paths = feature.geometry.coordinates;
-    let xyOutline = this.geojsonCoords2plane(paths[0], baseLat, baseLon);
-    let xyHoles = []; // Add holes to the building if more than one path given
-    for (let i = 1; i < paths.length; i++) {
-      xyHoles.push(this.geojsonCoords2plane(paths[i], baseLat, baseLon));
-    }
-    let height_m = this.feature2height(feature);
-    if (height_m === 0) {
-      return null; // skip building outlines that are covered by building parts
-    }
-    let minHeight_m = this.feature2minHeight(feature);
-    let building = this.createBuilding(xyOutline, xyHoles, height_m, minHeight_m);
-    // special handling for dome shaped building parts
-    if (('roof:shape' in feature.properties || 'building:shape' in feature.properties)
-      && (feature.properties['roof:shape'] == 'dome' || feature.properties['building:shape'] == 'dome')) {
-      building = this.createDome(xyOutline, height_m, minHeight_m);
-    }
-
-    let color = this.feature2color(feature);
-    let material = `color: ${color}; opacity: 1.0;`;
-    building.setAttribute('material', material);
-    return building;
+  // Check if feature is of a specific shape like 'dome'
+  hasShape: function(feature, shape) {
+    return ('building:shape' in feature.properties && feature.properties['building:shape'] == shape)
+      || ('roof:shape' in feature.properties && feature.properties['roof:shape'] == shape);
   },
 
   // Convert the geojson feature of a building into a 3d geometry
@@ -412,15 +360,12 @@ AFRAME.registerComponent('osm-geojson', {
       return null; // skip building outlines that are covered by building parts
     }
     let minHeight_m = this.feature2minHeight(feature);
-    let geometry = this.createGeometry(xyOutline, xyHoles, height_m, minHeight_m);
     // special handling for dome shaped building parts
-    if (('roof:shape' in feature.properties || 'building:shape' in feature.properties)
-      && (feature.properties['roof:shape'] == 'dome' || feature.properties['building:shape'] == 'dome')) {
-      geometry = this.createDomeGeometry(xyOutline, height_m, minHeight_m);
+    if (this.hasShape(feature, 'dome')) {
+      return this.createDomeGeometry(xyOutline, height_m, minHeight_m).toNonIndexed();
     }
-
-    // TODO: handle domes
-    return geometry;
+    // ExtrudeGeometry is already non-indexed, unlike the SphereGeometry for domes
+    return this.createGeometry(xyOutline, xyHoles, height_m, minHeight_m);
   },
 
   // Compute the bounding box of a tile at given zoom level in degrees
@@ -569,8 +514,6 @@ AFRAME.registerComponent('osm-geojson', {
 
     // <a-entity geometry-merger="preserveOriginal: false" material="color: #AAA">
     // let parent = document.createElement('a-entity');
-    // parent.setAttribute('geometry-merger', 'preserveOriginal: false');
-    // parent.setAttribute('material', 'color: #AAA');
     let parent = this.el;
 
     let geometries = [];
@@ -579,19 +522,17 @@ AFRAME.registerComponent('osm-geojson', {
         ignored += 1;
         continue;
       }
-      let building = this.feature2building(feature, this.data.lat, this.data.lon);
-      if (building) {
+      let geometry = this.feature2geometry(feature, this.data.lat, this.data.lon);
+      if (geometry) {
         // show skipped buildings transparent
         // if ('building' in feature.properties) {
         //   let material = building.getAttribute('material');
         //   building.setAttribute('material', material + ' transparent: true; opacity: 0.5;');
         // }
-
         // parent.appendChild(building);
-        let geometry = this.feature2geometry(feature, this.data.lat, this.data.lon);
+
         // setting colours per vertex as in https://discourse.threejs.org/t/52799/2
         // TODO: see if this can be simplified, e.g. with groups
-        geometry = geometry.toNonIndexed();
         // color.setHex(Math.random() * 0xffffff);
         let color = new THREE.Color(this.feature2color(feature));
         const colors = [];
